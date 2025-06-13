@@ -1,1 +1,1 @@
-# facuty_ranker
+# faculty_ranker
