@@ -1,0 +1,56 @@
+/* src/styles/Verify.css */
+
+.vauth-card {
+  width: 100%;
+  max-width: 400px;
+  margin: 80px auto;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  text-align: center;
+}
+
+.vauth-card h2 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.vauth-card p {
+  margin-bottom: 1.5rem;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.verify-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.verify-form input {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.verify-form button {
+  padding: 0.75rem;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.verify-form button:disabled {
+  background-color: #a3cdfd;
+  cursor: not-allowed;
+}
+
+.verify-form button:hover:enabled {
+  background-color: #0069d9;
+}
