@@ -1,1 +1,1 @@
-# agromitra-ML
+# faculty_ranker
