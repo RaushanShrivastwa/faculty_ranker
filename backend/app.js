@@ -11,7 +11,7 @@ app.use(express.json());
 // All APIs under /api
 app.use('/api/faculty', facultyRoutes);
 
-// 📦 Serve React frontend (after build)
+// Serve React frontend (after build)
 const buildPath = path.join(__dirname, '..', 'frontend', 'build');
 app.use(express.static(buildPath));
 
@@ -23,7 +23,7 @@ app.get(/.*/, (req, res) => {
 // Connect to DB and start server
 connectDB().then(() => {
   app.listen(5000, () => {
-    console.log('🚀 Server running at http://localhost:5000');
+    console.log('Server running at http://localhost:5000');
   });
 });
 
