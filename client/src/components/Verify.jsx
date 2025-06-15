@@ -1,76 +1,88 @@
 // src/pages/Verify.jsx
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import * as jwtDecode from 'jwt-decode';
-import '../styles/Verify.css';  // add whatever styles you like
+import React, { useState }        from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useAuth }                 from '../context/AuthContext'
+import '../styles/Verify.css'
 
-function Verify() {
-  const { login } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { email } = location.state || {};
+// minimal JWT parser—decodes the payload (the “middle” segment)
+function parseJWT(token) {
+  if (!token) throw new Error('Missing token')
+  const parts = token.split('.')
+  if (parts.length !== 3) throw new Error('Invalid JWT format')
 
-  const [otp, setOTP] = useState('');
-  const [loading, setLoading] = useState(false);
+  // Base64URL → Base64
+  const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+  // decode & percent‐encode for UTF-8 safety
+  const json = decodeURIComponent(
+    atob(b64)
+      .split('')
+      .map(ch => '%' + ch.charCodeAt(0).toString(16).padStart(2, '0'))
+      .join('')
+  )
+
+  return JSON.parse(json)
+}
+
+export default function Verify() {
+  const { login }      = useAuth()
+  const { state }      = useLocation()
+  const navigate       = useNavigate()
+  const email          = state?.email || ''
+  const [otp, setOTP]  = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async e => {
-    e.preventDefault();
-    if (loading) return;
-    setLoading(true);
+    e.preventDefault()
+    if (loading) return setLoading(true)
 
     try {
-      const res = await fetch('/verify-otp', {
-        method: 'POST',
+      const res  = await fetch('/verify-otp', {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp })
-      });
-      const data = await res.json();
+        body:    JSON.stringify({ email, otp })
+      })
+      const data = await res.json()
 
       if (!res.ok) {
-        alert(data.message || 'Verification failed');
-        setLoading(false);
-        return;
+        alert(data.message || 'Verification failed')
+        return setLoading(false)
       }
 
-      // 1. Decode the token to extract user details
-      let decodedUser = {};
+      let payload
       try {
-        const decoded = jwtDecode(data.token);
-        decodedUser = {
-          id: decoded.id,
-          email: decoded.email,
-          role: decoded.role,
-          banned: decoded.banned
-        };
+        payload = parseJWT(data.token)
       } catch (err) {
-        console.error('JWT decoding failed:', err);
-        alert('Verification succeeded, but could not process your login.');
-        setLoading(false);
-        return;
+        console.error('JWT parse error:', err)
+        alert('Verified, but token is invalid.')
+        return setLoading(false)
       }
 
-      // 2. Call your context login to persist token + user
-      login(data.token, decodedUser);
-
-      // 3. Navigate based on their role
-      if (decodedUser.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/FacultyList');
+      const user = {
+        id:     payload.id,
+        email:  payload.email,
+        role:   payload.role,
+        banned: payload.banned
       }
-    } catch (err) {
-      console.error('OTP verify error:', err);
-      alert('Network error.');
-    } finally {
-      setLoading(false);
+
+      // persist and route
+      login(data.token, user)
+      navigate(user.role === 'admin' ? '/admin' : '/facultyList')
     }
-  };
+    catch (err) {
+      console.error('Network / verify-otp error:', err)
+      alert('Network error. Please try again.')
+    }
+    finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="vauth-card">
       <h2>Verify OTP</h2>
-      <p>Please enter the OTP sent to <strong>{email}</strong></p>
+      <p>
+        Please enter the OTP sent to <strong>{email}</strong>
+      </p>
       <form onSubmit={handleSubmit} className="verify-form">
         <input
           type="text"
@@ -84,7 +96,5 @@ function Verify() {
         </button>
       </form>
     </div>
-  );
+  )
 }
-
-export default Verify;
