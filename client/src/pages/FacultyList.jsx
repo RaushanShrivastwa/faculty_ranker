@@ -43,11 +43,11 @@ const FacultyList = () => {
 
   const facultiesPerPage = 20;
 
-  // New state to control visibility of the search suggestion dropdown
+  // Enhanced search states
   const [showSuggestions, setShowSuggestions] = useState(false);
-
-  // Ref for the search input and dropdown container
-  const searchContainerRef = useRef(null); // Ref for the entire search bar area including dropdown
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const searchContainerRef = useRef(null);
 
   useEffect(() => {
     const fetchFaculties = async () => {
@@ -62,17 +62,10 @@ const FacultyList = () => {
         );
         setFaculties(data.faculty || []);
         setTotalPages(data.totalPages || 1);
-        // Only show suggestions if there's a search term and results
-        if (debouncedSearchTerm && data.faculty && data.faculty.length > 0) {
-          setShowSuggestions(true);
-        } else {
-          setShowSuggestions(false);
-        }
       } catch (err) {
         console.error('Error fetching faculties:', err);
         setError('Failed to load faculty data. Please try again later.');
         setFaculties([]);
-        setShowSuggestions(false); // Hide suggestions on error
       } finally {
         setLoading(false);
       }
@@ -81,56 +74,79 @@ const FacultyList = () => {
     fetchFaculties();
   }, [currentPage, debouncedSearchTerm, facultiesPerPage]);
 
+  // Enhanced search suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!searchTerm.trim()) {
+        setSearchSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      setSuggestionLoading(true);
+      try {
+        // Using the same getFacultyPage service for consistency
+        const data = await getFacultyPage(1, 5, searchTerm);
+        setSearchSuggestions(data.faculty || []);
+        setShowSuggestions(true);
+      } catch (err) {
+        console.error('Error fetching suggestions:', err);
+        setSearchSuggestions([]);
+      } finally {
+        setSuggestionLoading(false);
+      }
+    };
+
+    const debounce = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(debounce);
+  }, [searchTerm]);
 
   // Effect for handling clicks outside the search dropdown
   useEffect(() => {
     function handleClickOutside(event) {
-      // If the click is outside the searchContainerRef, hide suggestions
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
         setShowSuggestions(false);
       }
     }
 
-    // Add event listener when component mounts
     document.addEventListener("mousedown", handleClickOutside);
-
-    // Clean up the event listener when component unmounts
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [searchContainerRef]); // Dependency array: re-run if searchContainerRef changes (unlikely)
-
+  }, [searchContainerRef]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm]);
 
-  useEffect(() => {
-    // Focus only when the component mounts or when search term is cleared
-    // We don't want to re-focus on every render, only when explicitly needed.
-    if (!searchTerm) { // Only focus if searchTerm is empty (e.g., on clear or initial load)
-      searchInputRef.current?.focus();
-    }
-  }, [searchTerm]); // Re-run when searchTerm changes
-
-
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
-    // Show suggestions as soon as user types, if there's results
-    // The useEffect above will ultimately set `showSuggestions` based on fetch results
   };
 
   const handleClearSearch = () => {
     setSearchTerm('');
-    setShowSuggestions(false); // Hide suggestions immediately on clear
+    setShowSuggestions(false);
+    setSearchSuggestions([]);
     searchInputRef.current?.focus();
   };
 
   const handleSuggestionClick = (facultyName) => {
     setSearchTerm(facultyName);
-    setShowSuggestions(false); // Hide suggestions after selection
-    // Optionally, trigger a search immediately here if you don't want to rely on debounce
-    // setCurrentPage(1); // Reset page to 1 for new search
+    setShowSuggestions(false);
+    setCurrentPage(1);
+    searchInputRef.current?.blur();
+  };
+
+  const handleSearch = () => {
+    setShowSuggestions(false);
+    setCurrentPage(1);
+    searchInputRef.current?.blur();
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
   // --- End FacultyList State and Logic ---
 
@@ -158,7 +174,7 @@ const FacultyList = () => {
                 <svg className="h-8 w-8 text-purple-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 15L8 11H16L12 15Z" fill="currentColor" />
                   <path d="M12 8L16 12H8L12 8Z" fill="currentColor" />
-                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" />
+                  <path d="M12 22C17.5228 22 22 17.5228 22 12C2 6.47715 6.47715 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" />
                 </svg>
                 <motion.span
                   initial={{ opacity: 0 }}
@@ -166,7 +182,7 @@ const FacultyList = () => {
                   transition={{ delay: 0.2 }}
                   className="ml-2 text-xl font-bold text-white"
                 >
-                  <a href="/facultyList">Faculty<span className="text-purple-400">Ranker</span></a>
+                  <a href="/">Faculty<span className="text-purple-400">Ranker</span></a>
                 </motion.span>
               </div>
             </motion.div>
@@ -338,31 +354,29 @@ const FacultyList = () => {
 
       {/* --- FacultyList Content --- */}
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 py-8 px-4 sm:px-6 lg:px-8" style={{ paddingTop: '4rem' }}>
-        {/* Search and Add Faculty Section */}
+        {/* Enhanced Search and Add Faculty Section */}
         <div className="max-w-7xl mx-auto mb-8 md:mb-12">
-          {/* Apply the ref to the container that holds both the input and the dropdown */}
           <div ref={searchContainerRef} className="flex flex-col md:flex-row gap-4 mt-12 md:mt-20 items-center justify-between">
             <div className="relative w-full">
               <div className="flex items-center">
                 <input
                   ref={searchInputRef}
                   type="text"
-                  placeholder="Search by name or department..."
-                  className="w-full px-6 py-3 rounded-full bg-gray-800 border border-gray-700 focus:border-purple-500 focus:outline-none text-white placeholder-gray-400 transition-all duration-300 shadow-lg hover:shadow-purple-500/20"
+                  placeholder="Search faculty by name..."
+                  className="w-full px-6 py-4 text-base rounded-lg bg-white border-2 border-gray-300 focus:border-purple-500 focus:outline-none text-gray-900 placeholder-gray-500 transition-all duration-300 shadow-lg hover:shadow-purple-500/20 focus:shadow-purple-500/30"
                   value={searchTerm}
                   onChange={handleSearchChange}
+                  onKeyPress={handleKeyPress}
                   onFocus={() => {
-                    // Show suggestions when input is focused, if there's a search term
-                    if (searchTerm && faculties.length > 0) {
+                    if (searchTerm && searchSuggestions.length > 0) {
                       setShowSuggestions(true);
                     }
                   }}
-                  // onBlur event is handled by the document click listener for outside clicks
                 />
                 {searchTerm && (
                   <button
                     onClick={handleClearSearch}
-                    className="absolute right-14 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                    className="absolute right-20 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
@@ -370,29 +384,66 @@ const FacultyList = () => {
                   </button>
                 )}
                 <button
-                  type="button"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full transition-all duration-300"
-                  // You might want to trigger a full search here or navigate
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-4 py-2 rounded-md transition-all duration-300 min-w-[80px] font-medium"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                  </svg>
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  ) : (
+                    'Search'
+                  )}
                 </button>
               </div>
-              {/* Conditionally render suggestions based on showSuggestions state */}
-              {showSuggestions && searchTerm && faculties.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full bg-gray-800 rounded-lg shadow-lg border border-gray-700 max-h-60 overflow-auto">
-                  {/* Limiting search suggestions to max 5, not directly related to page size */}
-                  {faculties.slice(0, 5).map(faculty => (
+
+              {/* Loading indicator for suggestions */}
+              {suggestionLoading && (
+                <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 p-4">
+                  <div className="flex items-center justify-center text-gray-600 text-sm">
+                    <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Loading suggestions...
+                  </div>
+                </div>
+              )}
+
+              {/* Enhanced suggestions dropdown */}
+              {showSuggestions && searchTerm && searchSuggestions.length > 0 && !suggestionLoading && (
+                <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 max-h-80 overflow-auto">
+                  {searchSuggestions.map(faculty => (
                     <div
                       key={faculty._id}
-                      className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                      onClick={() => handleSuggestionClick(faculty.name)} // Use new handler
+                      className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-200"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSuggestionClick(faculty.name);
+                      }}
                     >
-                      <p className="text-white">{faculty.name}</p>
-                      <p className="text-gray-400 text-sm">{faculty.department}</p>
+                      <img 
+                        src={faculty.image_url || ''} 
+                        alt={faculty.name}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 mr-3 flex-shrink-0"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNmMGYwZjAiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0yMCAyMVY5QTIgMiAwIDAgMCAxOCA3SDZBMiAyIDAgMCAwIDQgOVYyMUwyIDIzTDIyIDIzTDIwIDIxWiIgc3Ryb2tlPSIjY2NjIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8Y2lyY2xlIGN4PSI5IiBjeT0iMTAiIHI9IjEiIGZpbGw9IiNjY2MiLz4KPC9zdmc+Cjwvc3ZnPgo=';
+                        }}
+                      />
+                      <div className="flex-grow min-w-0">
+                        <p className="text-gray-900 font-medium text-sm truncate">{faculty.name}</p>
+                        <p className="text-gray-500 text-xs truncate">{faculty.department || 'Department not specified'}</p>
+                      </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* No results message */}
+              {showSuggestions && !suggestionLoading && searchSuggestions.length === 0 && searchTerm.trim() && (
+                <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 p-4">
+                  <div className="text-center text-gray-600 text-sm">
+                    🔍 No faculty found matching "{searchTerm}"
+                  </div>
                 </div>
               )}
             </div>

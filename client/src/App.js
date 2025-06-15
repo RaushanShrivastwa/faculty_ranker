@@ -5,7 +5,7 @@ import Verify from './components/Verify';
 import Admin from './components/Admin';
 import AddFaculty from './pages/AddFaculty'
 import FacultyList from './pages/FacultyList';
-
+import './App.css';
 
 function App() {
   return (
