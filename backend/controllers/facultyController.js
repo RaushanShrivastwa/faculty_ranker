@@ -31,7 +31,7 @@ exports.getFacultyDetails = async (req, res) => {
     if (!faculty) return res.status(404).json({ error: "Faculty not found" });
     res.json(faculty);
   } catch (err) {
-    console.error("❌ Error fetching faculty:", err);
+    console.error(" Error fetching faculty:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -40,7 +40,7 @@ exports.getFacultyDetails = async (req, res) => {
 exports.getPaginatedFaculty = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   // Read limit from query parameters, with a default of 20 (or your desired default)
-  const limit = parseInt(req.query.limit) || 20; // <--- CORRECTED LINE HERE!
+  const limit = parseInt(req.query.limit) || 20; 
   const skip = (page - 1) * limit;
 
   try {
@@ -51,7 +51,7 @@ exports.getPaginatedFaculty = async (req, res) => {
     const searchTerm = req.query.search; // Assuming 'search' is the query parameter for search term
 
     if (searchTerm) {
-      // Add search criteria if a search term is present
+      
       query.$or = [
         { name: { $regex: searchTerm, $options: 'i' } },
         { department: { $regex: searchTerm, $options: 'i' } }
@@ -70,7 +70,7 @@ exports.getPaginatedFaculty = async (req, res) => {
       faculty
     });
   } catch (err) {
-    console.error('❌ Pagination fetch error:', err);
+    console.error(' Pagination fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch paginated faculty' });
   }
 };
