@@ -57,7 +57,7 @@ function Verify() {
       if (decodedUser.role === 'admin') {
         navigate('/admin');
       } else {
-        navigate('/Dashboard');
+        navigate('/FacultyList');
       }
     } catch (err) {
       console.error('OTP verify error:', err);
