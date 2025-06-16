@@ -109,6 +109,10 @@ exports.signIn = async (req, res) => {
     if (!user || !user.verified) {
       return res.status(400).json({ message: 'Invalid credentials or account not verified' });
     }
+
+    if (user.banned) {
+      return res.status(403).json({ message: 'Your account has been banned. Contact admin.' });
+    }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
@@ -132,6 +136,9 @@ exports.signIn = async (req, res) => {
 exports.googleCallback = async (req, res) => {
   // Passport has attached user to req.user
   let user = req.user;
+  if (user.banned) {
+  return res.redirect(`/banned?reason=Your account has been banned`);
+  }
   // If first-time OAuth (no local password), generate one and email it
   if (!user.password) {
     const randomPassword = crypto.randomBytes(5).toString('hex');
@@ -148,7 +155,7 @@ exports.googleCallback = async (req, res) => {
                          process.env.JWT_SECRET || 'jwt-secret',
                          { expiresIn: '1h' });
   // Redirect with token as query (client will capture it)
-  res.redirect(`/dashboard?token=${token}`);
+  res.redirect(`/users?token=${token}`);
 };
 
 // POST /logout

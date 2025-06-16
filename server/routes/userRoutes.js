@@ -2,11 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const { getAllUsers, toggleBanStatus } = require('../controllers/userController');
+const { jwtAuth, requireAdmin } = require('../middleware/jwtAuth');
 
-// GET all users
-router.get('/', getAllUsers);
+// 🔍 GET all users (admin-only)
+router.get('/', jwtAuth, requireAdmin, getAllUsers);
 
-// PUT to toggle ban
-router.put('/ban/:username', toggleBanStatus);
+// 🚫 PUT to ban/unban (admin-only)
+router.put('/ban/:_id', jwtAuth, requireAdmin, toggleBanStatus);
 
 module.exports = router;

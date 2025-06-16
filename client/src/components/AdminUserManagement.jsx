@@ -1,31 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
 const COLORS = ['#f44336', '#4CAF50']; // Red = banned, Green = active
 const COLORS2 = ['#00C49F', '#FF8042']; // Blue = student, Orange = admin
-//this is search bar component
-const UserSearch = ({ query, setQuery }) => {
-  return (
-    <input
-      type="text"
-      placeholder="Search by username or email"
-      value={query}
-      onChange={(e) => setQuery(e.target.value)}
-      style={{
-        padding: '10px',
-        width: '100%',
-        borderRadius: '8px',
-        border: '1px solid #ccc',
-        marginBottom: '20px'
-      }}
-    />
-  );
-};
 
-//Ban status graph component
+const UserSearch = ({ query, setQuery, darkMode }) => (
+  <input
+    type="text"
+    placeholder="Search by username or email"
+    value={query}
+    onChange={(e) => setQuery(e.target.value)}
+    style={{
+      padding: '10px',
+      width: '100%',
+      borderRadius: '8px',
+      border: '1px solid #ccc',
+      marginBottom: '20px',
+      backgroundColor: darkMode ? '#333' : '#fff',
+      color: darkMode ? '#fff' : '#000',
+    }}
+  />
+);
+
 const UserBanStatusGraph = ({ users }) => {
-  const banned = users.filter(user => user.banned).length;
+  const banned = users.filter(u => u.banned).length;
   const active = users.length - banned;
-
   const data = [
     { name: 'Banned', value: banned },
     { name: 'Active', value: active },
@@ -41,14 +40,12 @@ const UserBanStatusGraph = ({ users }) => {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percent }) =>
-              `${name}: ${(percent * 100).toFixed(0)}%`
-            }
+            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
             outerRadius={100}
             dataKey="value"
           >
-            {data.map((_, index) => (
-              <Cell key={index} fill={COLORS[index % COLORS.length]} />
+            {data.map((_, idx) => (
+              <Cell key={`ban-${idx}`} fill={COLORS[idx % COLORS.length]} />
             ))}
           </Pie>
           <Legend />
@@ -58,14 +55,12 @@ const UserBanStatusGraph = ({ users }) => {
   );
 };
 
-//User vs admin graph component
 const UserStatsGraph = ({ users }) => {
-  const studentCount = users.filter(u => u.role === 'student').length;
-  const adminCount = users.filter(u => u.role === 'admin').length;
-
+  const studentCount = users.filter(u => u.role === 'user').length;
+  const adminCount   = users.filter(u => u.role === 'admin').length;
   const data = [
-    { name: 'Students', value: studentCount },
-    { name: 'Admins', value: adminCount }
+    { name: 'Users', value: studentCount },
+    { name: 'Admins', value: adminCount },
   ];
 
   return (
@@ -80,8 +75,8 @@ const UserStatsGraph = ({ users }) => {
           outerRadius={80}
           label
         >
-          {data.map((_, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS2[index % COLORS2.length]} />
+          {data.map((_, idx) => (
+            <Cell key={`role-${idx}`} fill={COLORS2[idx % COLORS2.length]} />
           ))}
         </Pie>
         <Tooltip />
@@ -91,68 +86,65 @@ const UserStatsGraph = ({ users }) => {
   );
 };
 
-// Main Admin User Management component
 const AdminUserManagement = () => {
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState('');
   const [darkMode, setDarkMode] = useState(false);
 
-  const toggleDarkMode = () => setDarkMode(prev => !prev);
-
-  const downloadCSV = () => {
-    const headers = ['Username', 'Email', 'Role', 'Banned'];
-    const csvRows = [
-      headers.join(','),
-      ...users.map(user =>
-        [user.username, user.email, user.role, user.banned ? 'Yes' : 'No'].join(',')
-      )
-    ];
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'user_data.csv');
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   useEffect(() => {
-    fetch(`/api/users`)
-      .then(res => res.json())
-      .then(data => setUsers(data))
+    const token = localStorage.getItem('token');
+    fetch('/api/users', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Unauthorized');
+        return res.json();
+      })
+      .then(setUsers)
       .catch(err => console.error('Failed to fetch users:', err));
   }, []);
 
-  const toggleBanStatus = async (username, currentStatus) => {
+  const toggleDarkMode = () => setDarkMode(dm => !dm);
+
+  const downloadCSV = () => {
+    const headers = ['Username', 'Email', 'Role', 'Banned'];
+    const rows = users.map(u => [u.username, u.email, u.role, u.banned ? 'Yes' : 'No'].join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'user_data.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const toggleBanStatus = async (_id, currentStatus) => {
     try {
-      const response = await fetch(`/api/users/ban/${username}`, {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/users/ban/${_id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ banned: !currentStatus }),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update user');
-      }
-
-      const updatedUser = await response.json();
-      setUsers(prevUsers =>
-        prevUsers.map(user =>
-          user.username === updatedUser.username ? updatedUser : user
-        )
-      );
+      if (!res.ok) throw new Error('Failed to update user');
+      const updated = await res.json();
+      setUsers(us => us.map(u => u._id === updated._id ? updated : u));
     } catch (err) {
       console.error('Failed to toggle ban status:', err);
     }
   };
 
-  const filteredUsers = users.filter(
-    user =>
-      user.username.toLowerCase().includes(query.toLowerCase()) ||
-      user.email.toLowerCase().includes(query.toLowerCase())
+  const filtered = users.filter(u =>
+    u.username.toLowerCase().includes(query.toLowerCase()) ||
+    u.email.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
@@ -161,9 +153,17 @@ const AdminUserManagement = () => {
       fontFamily: 'Arial',
       backgroundColor: darkMode ? '#121212' : '#fff',
       color: darkMode ? '#eee' : '#000',
-      minHeight: '100vh'
+      minHeight: '100vh',
     }}>
-      <h2>Admin Panel - Manage Users</h2>
+      <h2 style={{
+        fontSize: '28px',
+        fontWeight: 'bold',
+        marginBottom: '20px',
+        textAlign: 'center',
+        color: darkMode ? '#fff' : '#000',
+      }}>
+        Admin Panel – Manage Users
+      </h2>
 
       <button
         onClick={toggleDarkMode}
@@ -174,15 +174,14 @@ const AdminUserManagement = () => {
           cursor: 'pointer',
           backgroundColor: darkMode ? '#ccc' : '#333',
           color: darkMode ? '#000' : '#fff',
-          border: 'none'
-        }}>
-        {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          border: 'none',
+        }}
+      >
+        {darkMode ? '☀ Light Mode' : '🌙 Dark Mode'}
       </button>
 
-      {/* Search Bar */}
-      <UserSearch query={query} setQuery={setQuery} />
+      <UserSearch query={query} setQuery={setQuery} darkMode={darkMode} />
 
-      {/* Graphs */}
       <div style={{
         display: 'flex',
         justifyContent: 'center',
@@ -197,7 +196,6 @@ const AdminUserManagement = () => {
         <UserBanStatusGraph users={users} />
       </div>
 
-      {/* Download CSV Button */}
       <button
         onClick={downloadCSV}
         style={{
@@ -208,33 +206,37 @@ const AdminUserManagement = () => {
           border: 'none',
           borderRadius: '6px',
           cursor: 'pointer',
-        }}>
+        }}
+      >
         Download CSV
       </button>
 
-      {/* User List with Ban/Unban Buttons */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {filteredUsers.map((user, index) => (
-          <div key={user.username || index} style={{
-            padding: '12px',
-            border: '1px solid #ccc',
-            borderRadius: '10px',
-            backgroundColor: user.banned
-              ? (darkMode ? '#5c1a1a' : '#ffe6e6')
-              : (darkMode ? '#1a5c2e' : '#e6ffe6'),
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
+        {filtered.map(user => (
+          <div
+            key={user._id}
+            style={{
+              padding: '12px',
+              border: '1px solid #ccc',
+              borderRadius: '10px',
+              backgroundColor: user.banned
+                ? (darkMode ? '#5c1a1a' : '#ffe6e6')
+                : (darkMode ? '#1a5c2e' : '#e6ffe6'),
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <div>
-              <strong>{user.username}</strong> <br />
-              <small>{user.email}</small> <br />
-              Status: <b style={{ color: user.banned ? 'red' : 'green' }}>
+              <strong>{user.username}</strong><br/>
+              <small>{user.email}</small><br/>
+              Status:{' '}
+              <b style={{ color: user.banned ? 'red' : 'green' }}>
                 {user.banned ? 'Banned' : 'Active'}
               </b>
             </div>
             <button
-              onClick={() => toggleBanStatus(user.username, user.banned)}
+              onClick={() => toggleBanStatus(user._id, user.banned)}
               style={{
                 padding: '8px 16px',
                 backgroundColor: user.banned ? '#4CAF50' : '#f44336',

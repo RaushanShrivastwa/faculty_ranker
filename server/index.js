@@ -1,14 +1,16 @@
-// server/index.js
 require('dotenv').config();
-const express = require('express');
+const express  = require('express');
 const mongoose = require('mongoose');
-const path = require('path');
-const session = require('express-session');
+const path     = require('path');
+const session  = require('express-session');
 const passport = require('./config/passport');
-const authRoutes = require('./routes/authRoutes');
-const jwtAuth = require('./middleware/jwtAuth');
-const facultyRoutes = require('./routes/facultyRoutes'); // ✅ Faculty route integration
-const userRoutes = require('./routes/userRoutes'); 
+
+// 🔑 Destructure jwtAuth (not the entire module object)
+const { jwtAuth }   = require('./middleware/jwtAuth');
+
+const authRoutes    = require('./routes/authRoutes');
+const facultyRoutes = require('./routes/facultyRoutes');
+const userRoutes    = require('./routes/userRoutes');
 
 const app = express();
 app.use(express.json());
@@ -18,8 +20,9 @@ app.use(express.urlencoded({ extended: true }));
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).then(() => console.log('✅ MongoDB connected'))
-  .catch((err) => console.error('❌ MongoDB error:', err));
+})
+.then(() => console.log('✅ MongoDB connected'))
+.catch(err => console.error('❌ MongoDB error:', err));
 
 // ✅ Session & Passport Setup
 app.use(session({
@@ -30,19 +33,16 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ✅ Authentication Routes
-app.use(authRoutes);
-
-// ✅ Faculty API Routes (e.g. /api/faculty/search, /api/faculty/all)
+// ✅ API Routes
+app.use('/', authRoutes);        // mount auth routes
 app.use('/api/faculty', facultyRoutes);
-app.use('/api/users', userRoutes); 
+app.use('/api/users',   userRoutes);
 
-
-// ✅ Example Protected Route
+// ✅ Protected Dashboard Route
 app.get('/api/dashboard', jwtAuth, async (req, res) => {
   try {
     const User = require('./models/User');
-    const Log = require('./models/Log');
+    const Log  = require('./models/Log');
     const user = await User.findById(req.user.id).select('-password');
     const logs = await Log.find({ userId: req.user.id }).sort({ timestamp: -1 });
     res.json({ user, logs });
@@ -52,11 +52,16 @@ app.get('/api/dashboard', jwtAuth, async (req, res) => {
 });
 
 // ✅ Serve React frontend
-app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
+const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+app.use(express.static(clientBuildPath));
+
+// ✅ Catch-all for React Router
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => 
+  console.log(`🚀 Server running on port ${PORT}`)
+);
