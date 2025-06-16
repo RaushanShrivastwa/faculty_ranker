@@ -16,6 +16,7 @@ function App() {
       <Route path="/facultyList" element={<FacultyList />} />
       <Route path="/addFaculty" element={<AddFaculty/>} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/AdminUserManagement" element={<AdminUserManagement />} />
     </Routes>
   );
 }
