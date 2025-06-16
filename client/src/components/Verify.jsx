@@ -1,4 +1,3 @@
-// src/pages/Verify.jsx
 import React, { useState }        from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth }                 from '../context/AuthContext'
@@ -33,7 +32,8 @@ export default function Verify() {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    if (loading) return setLoading(true)
+    if (loading) return
+    setLoading(true)
 
     try {
       const res  = await fetch('/verify-otp', {
@@ -45,8 +45,12 @@ export default function Verify() {
 
       if (!res.ok) {
         alert(data.message || 'Verification failed')
-        return setLoading(false)
+        setLoading(false)
+        return
       }
+
+      // Persist the JWT token for future requests
+      localStorage.setItem('token', data.token)
 
       let payload
       try {
@@ -54,7 +58,8 @@ export default function Verify() {
       } catch (err) {
         console.error('JWT parse error:', err)
         alert('Verified, but token is invalid.')
-        return setLoading(false)
+        setLoading(false)
+        return
       }
 
       const user = {
@@ -64,7 +69,7 @@ export default function Verify() {
         banned: payload.banned
       }
 
-      // persist and route
+      // persist in context and route
       login(data.token, user)
       navigate(user.role === 'admin' ? '/admin' : '/facultyList')
     }

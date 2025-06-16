@@ -1,18 +1,16 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth }     from '../context/AuthContext'
+import { useAuth } from '../context/AuthContext'
 import '../styles/Login.css'
 
-// simple JWT payload parser—no external lib needed
+// Simple JWT payload parser—no external lib needed
 function parseJWT(token) {
   if (!token) throw new Error('Missing token')
   const parts = token.split('.')
   if (parts.length !== 3) throw new Error('Invalid JWT format')
 
-  // Base64URL → Base64
   const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-  // decode, percent‐encode for UTF-8, then parse JSON
   const json = decodeURIComponent(
     atob(b64)
       .split('')
@@ -35,16 +33,20 @@ export default function Login() {
     e.preventDefault()
     try {
       const res = await fetch('/signin', {
-        method:  'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(loginData),
+        body: JSON.stringify(loginData),
       })
+
       const data = await res.json()
 
       if (!res.ok) {
         alert(data.message || 'Login failed')
         return
       }
+
+      // Save token in localStorage
+      localStorage.setItem('token', data.token)
 
       let payload
       try {
@@ -56,16 +58,16 @@ export default function Login() {
       }
 
       const user = {
-        id:     payload.id,
-        email:  payload.email,
-        role:   payload.role,
+        id: payload.id,
+        email: payload.email,
+        role: payload.role,
         banned: payload.banned,
       }
 
-      // persist token + user in context
+      // Set auth context
       login(data.token, user)
 
-      // navigate by role
+      // Redirect based on role
       navigate(user.role === 'admin' ? '/admin' : '/facultyList')
     } catch (err) {
       console.error('Login error:', err)
