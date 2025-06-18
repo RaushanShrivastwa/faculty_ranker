@@ -46,6 +46,8 @@ function App() {
       <Route path="/signup" element={<Signup />} />
       <Route path="/verify" element={<Verify />} />
       <Route path="/facultyList" element={<FacultyList />} />
+      <Route path="/add-faculty" element={<AddFaculty />} />
+
       {/* Protected Routes for authenticated users */}
       
       <Route
