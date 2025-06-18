@@ -5,6 +5,7 @@ const path     = require('path');
 const session  = require('express-session');
 const passport = require('./config/passport');
 
+
 // 🔑 Destructure jwtAuth (not the entire module object)
 const { jwtAuth }   = require('./middleware/jwtAuth');
 
@@ -15,6 +16,7 @@ const userRoutes    = require('./routes/userRoutes');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // ✅ Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
@@ -59,6 +61,7 @@ app.use(express.static(clientBuildPath));
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
+
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;

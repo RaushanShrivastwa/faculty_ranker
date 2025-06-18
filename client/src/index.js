@@ -8,6 +8,7 @@ import './index.css';
 // Import AuthProvider
 import { AuthProvider } from './context/AuthContext'; // Make sure this path is correct
 
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
