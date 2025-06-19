@@ -6,7 +6,10 @@
   # The `base` directory is where Netlify will run the build command.
   base = "client/"
   command = "npm run build" # Or "yarn build" if you use yarn workspaces
-  publish = "client/build"  # Or "client/dist" if your React app builds to 'dist'
+  
+  # CORRECTED: The publish directory is relative to the 'base' directory ('client/').
+  # So, if your React app builds to 'client/build', this path should just be 'build'.
+  publish = "build"  # Or "dist" if your React app builds to 'dist'
 
   # For your Express backend (Netlify Functions):
   # This tells Netlify where to find your serverless functions.
@@ -40,9 +43,8 @@
   # This should point to the functions directory relative to the monorepo root.
   functions = "server/netlify/functions"
   
-  # Specifies the directory to serve static files from during local development.
-  # This should match your frontend's build output directory.
-  publish = "client/build" 
+  # The publish directory for local dev is also relative to the `base` directory.
+  publish = "build" 
   
   # Prevents Netlify from trying to auto-detect the framework, which can sometimes
   # be ambiguous in a monorepo setup. Helps ensure your specified commands are used.
