@@ -9,7 +9,7 @@
 // - Then go into the 'server' directory
 // - Then require the 'index.js' file within the 'server' directory.
 // This is adjusted because api.js is now directly inside the 'functions' folder at the repo root.
-const expressApp = require('server/index'); // <<<--- THIS LINE HAS BEEN MODIFIED AGAIN
+const expressApp = require('./server/index'); // <<<--- THIS LINE HAS BEEN MODIFIED AGAIN
 
 // 'serverless-http' is a crucial library that wraps your Express application
 // to make it compatible with the AWS Lambda (which Netlify Functions use)
