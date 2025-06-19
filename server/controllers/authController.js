@@ -1,3 +1,4 @@
+// controllers/authController.js
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
@@ -7,11 +8,13 @@ const Analytics = require('../models/Analytics');
 const Log = require('../models/Log');
 const { sendOTPEmail, sendPasswordEmail } = require('../services/emailService');
 
-// In-memory store for pending signups (email → {name, phno, password, otp})
 const tempSignups = {};
+const OTP_COOLDOWN_MS = 15 * 60 * 1000;
 
-// Helper: cooldown time in ms
-const OTP_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
+// Helper
+function isVitapEmail(email) {
+  return email.endsWith('@vitapstudent.ac.in');
+}
 
 exports.requestOTP = async (req, res) => {
   const { name, email, phno, password } = req.body;
@@ -20,12 +23,12 @@ exports.requestOTP = async (req, res) => {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
-  try {
-    // Step 1: Check for existing registered users
-    const existingUser = await User.findOne({
-      $or: [{ email }, { phno }]
-    });
+  if (!isVitapEmail(email)) {
+    return res.status(403).json({ message: 'Only vitapstudent.ac.in emails are allowed.' });
+  }
 
+  try {
+    const existingUser = await User.findOne({ $or: [{ email }, { phno }] });
     if (existingUser) {
       return res.status(400).json({
         message: existingUser.email === email
@@ -34,7 +37,6 @@ exports.requestOTP = async (req, res) => {
       });
     }
 
-    // Step 2: Check if OTP was recently sent
     const existingSignup = tempSignups[email];
     if (existingSignup?.lastSentAt) {
       const timeSinceLast = Date.now() - existingSignup.lastSentAt;
@@ -46,37 +48,25 @@ exports.requestOTP = async (req, res) => {
       }
     }
 
-    // Step 3: Generate OTP and store temp data
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    tempSignups[email] = {
-      name, email, phno, password, otp,
-      lastSentAt: Date.now() // store cooldown timestamp
-    };
+    tempSignups[email] = { name, email, phno, password, otp, lastSentAt: Date.now() };
 
     await sendOTPEmail(email, otp);
     console.log(`OTP for ${email}: ${otp}`);
 
-    return res.status(200).json({
-      message: 'OTP sent to your email. Please verify to complete signup.'
-    });
+    return res.status(200).json({ message: 'OTP sent to your email. Please verify to complete signup.' });
   } catch (error) {
     console.error('Error in OTP request:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 };
 
-// POST /verify-otp
 exports.verifyOTP = async (req, res) => {
   const { email, otp } = req.body;
   const pending = tempSignups[email];
-  if (!pending) {
-    return res.status(400).json({ message: 'No pending signup found for this email' });
-  }
-  if (pending.otp !== otp) {
-    return res.status(400).json({ message: 'Invalid OTP' });
-  }
-  // Create user
+  if (!pending) return res.status(400).json({ message: 'No pending signup found for this email' });
+  if (pending.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
+
   const hashedPassword = await bcrypt.hash(pending.password, 10);
   try {
     const user = await User.create({
@@ -88,12 +78,8 @@ exports.verifyOTP = async (req, res) => {
       role: 'user',
       verified: true
     });
-    delete tempSignups[email];  // cleanup
-
-    // Generate JWT
-    const token = jwt.sign({ id: user._id, role: user.role },
-                            process.env.JWT_SECRET || 'jwt-secret',
-                            { expiresIn: '1h' });
+    delete tempSignups[email];
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'jwt-secret', { expiresIn: '1h' });
     res.status(201).json({ message: 'User created successfully', token });
   } catch (error) {
     console.error('Error creating user:', error);
@@ -101,15 +87,18 @@ exports.verifyOTP = async (req, res) => {
   }
 };
 
-// POST /signin
 exports.signIn = async (req, res) => {
   const { email, password } = req.body;
+
+  if (!isVitapEmail(email)) {
+    return res.status(403).json({ message: 'Only vitapstudent.ac.in emails are allowed.' });
+  }
+
   try {
     const user = await User.findOne({ email });
     if (!user || !user.verified) {
       return res.status(400).json({ message: 'Invalid credentials or account not verified' });
     }
-
     if (user.banned) {
       return res.status(403).json({ message: 'Your account has been banned. Contact admin.' });
     }
@@ -117,11 +106,7 @@ exports.signIn = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
-    // Successful login
-    const token = jwt.sign({ id: user._id, role: user.role },
-                           process.env.JWT_SECRET || 'jwt-secret',
-                           { expiresIn: '1h' });
-    // Log analytics
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'jwt-secret', { expiresIn: '1h' });
     await new Analytics({ userId: user._id, actions: ['logged_in'] }).save();
     res.json({ message: 'Sign-in successful', token });
   } catch (error) {
@@ -130,16 +115,17 @@ exports.signIn = async (req, res) => {
   }
 };
 
-// GET /auth/google (Passport handles redirect)
-
-// GET /auth/google/callback
 exports.googleCallback = async (req, res) => {
-  // Passport has attached user to req.user
   let user = req.user;
-  if (user.banned) {
-  return res.redirect(`/banned?reason=Your account has been banned`);
+
+  if (!isVitapEmail(user.email)) {
+    return res.redirect('/403'); // Must match React route
   }
-  // If first-time OAuth (no local password), generate one and email it
+
+  if (user.banned) {
+    return res.redirect(`/banned?reason=Your account has been banned`);
+  }
+
   if (!user.password) {
     const randomPassword = crypto.randomBytes(5).toString('hex');
     user.password = await bcrypt.hash(randomPassword, 10);
@@ -150,16 +136,11 @@ exports.googleCallback = async (req, res) => {
       console.error('Error sending password email:', e);
     }
   }
-  // Issue JWT token and redirect to client dashboard
-  const token = jwt.sign({ id: user._id, role: user.role },
-                         process.env.JWT_SECRET || 'jwt-secret',
-                         { expiresIn: '1h' });
-  // Redirect with token as query (client will capture it)
+
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'jwt-secret', { expiresIn: '1h' });
   res.redirect(`/users?token=${token}`);
 };
 
-// POST /logout
 exports.logout = (req, res) => {
-  // Client simply deletes token; optionally handle server-side cleanup here
   res.json({ message: 'User logged out successfully' });
 };

@@ -12,7 +12,7 @@ const FacultyLogSchema = new mongoose.Schema({
   },
   action: {
     type: String,
-    enum: ['add'],
+    enum: ['add', 'rate'], // ✅ add 'rate' here
     default: 'add'
   },
   timestamp: {

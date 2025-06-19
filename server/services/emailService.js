@@ -30,4 +30,16 @@ async function sendPasswordEmail(toEmail, password) {
   await transporter.sendMail(mailOptions);
 }
 
-module.exports = { sendOTPEmail, sendPasswordEmail };
+// Add to your emailService.js
+async function sendRejectionEmail(toEmail, facultyName) {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: toEmail,
+    subject: `Faculty Rejected: ${facultyName}`,
+    text: `Your submission for the faculty "${facultyName}" was rejected by the admin.\n\nRepeated spam or low-quality entries may lead to a ban. Please ensure your submissions are accurate and relevant.\n\n- Faculty Ranker Team`
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
+module.exports = { sendOTPEmail, sendPasswordEmail, sendRejectionEmail };

@@ -7,17 +7,17 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          dark: '#1E1E2D',    // Dark background color
-          light: '#2D2D42',   // Lighter dark variant
+          dark: '#1E1E2D',
+          light: '#2D2D42',
         },
         accent: {
-          purple: '#8B5CF6',  // Purple accent color
+          purple: '#8B5CF6',
         },
         gray: {
-          100: '#F3F4F6',     // Light text color
-          700: '#374151',     // Border colors
-          800: '#1F2937',     // Darker elements
-          900: '#111827',     // Darkest elements
+          100: '#F3F4F6',
+          700: '#374151',
+          800: '#1F2937',
+          900: '#111827',
         }
       }
     },

@@ -54,3 +54,11 @@
 .verify-form button:hover:enabled {
   background-color: #0069d9;
 }
+
+.verify-form input {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  color: #333; /* Add this to ensure legibility */
+}

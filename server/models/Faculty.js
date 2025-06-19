@@ -4,6 +4,7 @@ const FacultySchema = new mongoose.Schema({
   id: String,
   name: String,
   image_url: String,
+  imagePublicId: String,
   attendance_rating: Number,
   correction_rating: Number,
   teaching_rating: Number,
