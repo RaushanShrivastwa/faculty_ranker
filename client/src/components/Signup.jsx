@@ -1,4 +1,4 @@
-// src/components/Signup.jsx
+// src/components/Signup.jsx capital
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Signup.css';
