@@ -12,7 +12,7 @@
 # This section explicitly defines settings for Netlify Functions.
 # The 'directory' path here is relative to the REPOSITORY ROOT.
 [functions]
-  directory = "server/netlify/functions" # CORRECTED: Path to functions, relative to repo root
+  directory = "server/functions" # CORRECTED: Path to functions, relative to repo root
   external_node_modules = ["express", "serverless-http"]
   node_bundler = "esbuild"
 
@@ -28,6 +28,6 @@
   command = "npm start --prefix client" # Or "yarn start --cwd client"
   port = 3000
   # The functions path here should also be relative to the REPOSITORY ROOT for local dev
-  functions = "server/netlify/functions" 
+  functions = "server/functions" 
   publish = "build" 
   framework = "#custom"
