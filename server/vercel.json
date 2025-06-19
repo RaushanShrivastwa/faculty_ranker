@@ -1,4 +1,3 @@
-// vercel.json (in the root of your monorepo)
 {
   "rewrites": [
     {
