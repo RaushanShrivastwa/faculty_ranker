@@ -12,7 +12,7 @@
 # This section explicitly defines settings for Netlify Functions.
 # The 'directory' path here is now just the 'netlify' folder at the REPOSITORY ROOT.
 [functions]
-  directory = "netlify" # CORRECTED: Path to functions, now the 'netlify' folder itself at repo root
+  directory = "" # CORRECTED: Path to functions, now the 'netlify' folder itself at repo root
   external_node_modules = ["express", "serverless-http"]
   node_bundler = "esbuild"
 
