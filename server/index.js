@@ -16,6 +16,7 @@ const facultyRoutes = require('./routes/facultyRoutes'); // Assuming this path i
 const userRoutes = require('./routes/userRoutes'); // Assuming this path is correct relative to your server directory
 
 const app = express();
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
