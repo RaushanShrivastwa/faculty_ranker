@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Github, Users, Code, Palette, Database, Shield, Star, Sparkles } from 'lucide-react';
+import { Github, Users, Code,Database, Shield, Star, Sparkles } from 'lucide-react'; 
 import { useAuth } from '../context/AuthContext';
 
 const AboutUs = () => {
