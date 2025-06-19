@@ -17,14 +17,14 @@
       "config": { "distDir": "build" }
     },
     {
-      "src": "server/server.js",
+      "src": "server/index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/server.js"
+      "dest": "server/index.js"
     },
     {
       "src": "/(.*)",
