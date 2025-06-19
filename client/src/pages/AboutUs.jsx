@@ -1,4 +1,4 @@
-import React, { useState /* REMOVE useEffect */ } from 'react';
+import React, { useState} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Github, Users, Code,Database, Shield, Star, Sparkles } from 'lucide-react'; 
 import { useAuth } from '../context/AuthContext';
