@@ -4,7 +4,10 @@
     {
       "src": "client/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "build" }
+      "config": {
+        "buildCommand": "npm install && npm run build",
+        "distDir": "client/build"
+      }
     },
     {
       "src": "server/index.js",
@@ -14,18 +17,12 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/index.js",
-      "methods": ["GET","HEAD","PUT","PATCH","POST","DELETE","OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization"
-      }
+      "dest": "/server/index.js"
     },
     { "handle": "filesystem" },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/client/build/index.html"
     }
   ]
 }
