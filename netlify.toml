@@ -1,0 +1,49 @@
+# netlify.toml at the root of your monorepo
+
+[build]
+  # For your React frontend:
+  # This tells Netlify where your frontend code lives and what command to run to build it.
+  # The `base` directory is where Netlify will run the build command.
+  base = "client/"
+  command = "npm run build" # Or "yarn build" if you use yarn workspaces
+  publish = "client/build"  # Or "client/dist" if your React app builds to 'dist'
+
+  # For your Express backend (Netlify Functions):
+  # This tells Netlify where to find your serverless functions.
+  # The path is relative to the repository root.
+  functions = "server/netlify/functions"
+
+[functions]
+  # Important for Express functions to explicitly include 'express' and 'serverless-http'
+  # as external dependencies for Netlify's bundler (esbuild). This prevents issues
+  # with bundling large modules and ensures they are correctly handled.
+  external_node_modules = ["express", "serverless-http"]
+  node_bundler = "esbuild" # Recommended for faster builds and better compatibility
+
+[[redirects]]
+  # This is crucial! It rewrites requests to your /api path to your serverless function.
+  # The 'to' path should match the base path where your serverless Express function is deployed.
+  # Since your function entry file is `api.js`, it will be deployed to `/.netlify/functions/api`.
+  # The `:splat` ensures that any sub-paths (e.g., /api/users, /api/faculty) are passed through.
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true # Forces the rewrite even if a file exists at the source path
+
+# Optional: Configuration for Netlify Dev (local development using `netlify dev`)
+[dev]
+  # Command to run your React dev server locally
+  command = "npm start --prefix client" # Or "yarn start --cwd client"
+  port = 3000 # React default development port
+  
+  # When running `netlify dev`, proxy requests to your Express serverless function locally.
+  # This should point to the functions directory relative to the monorepo root.
+  functions = "server/netlify/functions"
+  
+  # Specifies the directory to serve static files from during local development.
+  # This should match your frontend's build output directory.
+  publish = "client/build" 
+  
+  # Prevents Netlify from trying to auto-detect the framework, which can sometimes
+  # be ambiguous in a monorepo setup. Helps ensure your specified commands are used.
+  framework = "#custom" 
