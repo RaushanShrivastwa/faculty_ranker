@@ -1,87 +1,64 @@
 // server/index.js
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
 const passport = require('./config/passport');
 const { jwtAuth } = require('./middleware/jwtAuth');
 
-// Routes
-const authRoutes = require('./routes/authRoutes');
+const authRoutes    = require('./routes/authRoutes');
 const facultyRoutes = require('./routes/facultyRoutes');
-const userRoutes = require('./routes/userRoutes');
+const userRoutes    = require('./routes/userRoutes');
 
 const app = express();
 
-// === CORS ===
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-};
+// ─── 1) MANUAL CORS MIDDLEWARE (runs before multer/body‑parsers) ───
+app.use((req, res, next) => {
+  const origin = req.get('Origin') || '*';
+  res.header('Access-Control-Allow-Origin',  origin);
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  // short‑circuit preflight:
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
-
-// === Body Parsing ===
+// ─── 2) BODY PARSERS ───
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// === MongoDB Connection ===
+// ─── 3) CONNECT TO MONGO ───
 let isConnected = false;
-app.get('/api/ping', (req, res) => {
-  res.send('pong');
-});
-
-
 const connectDb = async () => {
-  if (isConnected) return;
-
-  await mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000,
-  });
-
-  isConnected = true;
-  console.log('✅ MongoDB connected');
+  if (!isConnected) {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true, 
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000
+    });
+    isConnected = true;
+    console.log('✅ MongoDB connected');
+  }
 };
-
 app.use(async (req, res, next) => {
   try {
     await connectDb();
     next();
   } catch (err) {
-    console.error('❌ MongoDB error:', err.message);
+    console.error('DB connection error', err);
     res.status(500).send('DB error');
   }
 });
 
-// === Auth (NO express-session) ===
+// ─── 4) AUTH INITIALIZATION ───
 app.use(passport.initialize());
 
-// === Routes ===
-app.use('/api/auth', authRoutes);
+// ─── 5) ROUTES ───
+app.use('/api/auth',    authRoutes);
 app.use('/api/faculty', facultyRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/users',   userRoutes);
+app.get('/api/dashboard', jwtAuth, /* ... */);
+app.get('/api/health', (req, res) => res.send('OK'));
 
-// === Protected Route ===
-app.get('/api/dashboard', jwtAuth, async (req, res) => {
-  try {
-    const User = require('./models/User');
-    const Log = require('./models/Log');
-
-    const user = await User.findById(req.user.id).select('-password');
-    const logs = await Log.find({ userId: req.user.id }).sort({ timestamp: -1 });
-
-    res.json({ user, logs });
-  } catch (err) {
-    console.error('Dashboard error:', err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// === Health Check ===
-app.get('/api/health', (req, res) => res.status(200).send('OK'));
-
+// ─── 6) EXPORT ───
 module.exports = app;
