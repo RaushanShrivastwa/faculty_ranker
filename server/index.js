@@ -73,7 +73,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // === 🔗 Routes ===
-app.use('/api', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/users', userRoutes);
 
