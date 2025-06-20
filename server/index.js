@@ -73,12 +73,12 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // === 🔗 Routes ===
-app.use('/api/auth', authRoutes);
-app.use('/api/faculty', facultyRoutes);
-app.use('/api/users', userRoutes);
+app.use('/auth', authRoutes);
+app.use('/faculty', facultyRoutes);
+app.use('/users', userRoutes);
 
 // === 🔐 Protected Example Route ===
-app.get('/api/dashboard', jwtAuth, async (req, res) => {
+app.get('/dashboard', jwtAuth, async (req, res) => {
   try {
     const User = require('./models/User');
     const Log = require('./models/Log');
@@ -92,7 +92,7 @@ app.get('/api/dashboard', jwtAuth, async (req, res) => {
 });
 
 // === 🩺 Health Check ===
-app.get('/api/health', (req, res) => res.status(200).send('OK'));
+app.get('/health', (req, res) => res.status(200).send('OK'));
 
 // === 🚀 Export for Serverless ===
 module.exports = app;
