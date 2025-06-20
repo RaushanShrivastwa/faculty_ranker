@@ -1,6 +1,7 @@
 // routes/facultyRoutes.js
 const express = require('express');
 const router = express.Router();
+const cors = require('cors'); // <-- Make sure cors is imported here
 const { jwtAuth, requireAdmin } = require('../middleware/jwtAuth');
 const {
   searchFaculty,
@@ -14,8 +15,6 @@ const {
   checkIfUserRated
 } = require('../controllers/facultyController');
 const { uploadMiddleware, uploadImage } = require('../controllers/imageController');
-const cors = require('cors'); // Import cors
-const { corsOptions } = require('../config/cors'); // Ensure you have this file and export corsOptions from it
 
 // ----- Public / general -----
 router.get('/all', getPaginatedFaculty);
@@ -31,15 +30,27 @@ router.get('/:id', getFacultyDetails);
 router.post('/', jwtAuth, addFaculty);
 
 // Image Upload Routes
-// Handle preflight OPTIONS request specifically for the /upload route
-router.options('/upload', cors(corsOptions));
-// Handle the POST request for /upload
+// 1) Preflight for upload must respond with CORS headers:
+router.options(
+  '/upload',
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+);
+
+// 2) Then the actual upload POST — also wrapped with CORS:
 router.post(
   '/upload',
-  cors(corsOptions), // Also apply CORS to the POST request itself
-  jwtAuth,           // Ensure user is authenticated
-  uploadMiddleware,  // Multer middleware to handle file upload
-  uploadImage        // Controller function to process the uploaded image
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }),
+  jwtAuth,
+  uploadMiddleware,  // multer
+  uploadImage        // your controller
 );
 
 // Faculty Rating Routes
