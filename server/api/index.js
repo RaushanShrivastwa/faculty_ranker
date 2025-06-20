@@ -1,7 +1,3 @@
-// server/functions/api.js
-const serverless = require('serverless-http');
-const app = require('../index'); // full Express app with routes
-
-module.exports = serverless(app, {
-  callbackWaitsForEmptyEventLoop: false,
-});
+// api/index.js
+const app = require('../server/index'); // your Express app
+module.exports = app;
