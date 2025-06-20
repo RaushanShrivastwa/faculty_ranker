@@ -1,8 +1,9 @@
-// src/components/Verify.jsx
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Verify.css';
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 function parseJWT(token) {
   if (!token) throw new Error('Missing token');
@@ -29,7 +30,7 @@ export default function Verify() {
     setLoading(true);
 
     try {
-      const res = await fetch('/verify-otp', {
+      const res = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp })
