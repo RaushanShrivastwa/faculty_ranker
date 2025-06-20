@@ -29,6 +29,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // === MongoDB Connection ===
 let isConnected = false;
+app.get('/api/ping', (req, res) => {
+  res.send('pong');
+});
+
 
 const connectDb = async () => {
   if (isConnected) return;
