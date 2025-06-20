@@ -1,16 +1,30 @@
+# netlify.toml (at repo root)
+
 [build]
-  base      = "."  
-  # first cd into client, install deps, then build
-  command   = "cd client && npm ci && npm run build"
-  publish   = "client/build"
+  base    = "."  
+  command = """
+    # 1) Install your server's deps so that esbuild can bundle them
+    npm ci --prefix server && \
+    # 2) Install your client's deps
+    npm ci --prefix client && \
+    # 3) Build your React app
+    npm run build --prefix client
+  """
+  publish = "client/build"
 
 [functions]
-  directory = "server/functions"
-  external_node_modules = ["express","serverless-http"]
-  node_bundler = "esbuild"
+  directory               = "server/functions"  
+  external_node_modules   = ["express", "serverless-http"]
+  node_bundler            = "esbuild"
 
 [[redirects]]
   from   = "/api/*"
   to     = "/.netlify/functions/api/:splat"
   status = 200
   force  = true
+
+[dev]
+  command   = "npm start --prefix client"
+  framework = "#custom"
+  publish   = "client/build"
+  functions = "server/functions"
