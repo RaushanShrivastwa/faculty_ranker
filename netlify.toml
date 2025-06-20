@@ -1,0 +1,10 @@
+[build]
+  base      = "server"
+  command   = "npm install"
+  functions = "server/functions"
+  publish   = "server"   # unused for pure functions
+
+[[redirects]]
+  from = "/api/*"
+  to   = "/.netlify/functions/api/:splat"
+  status = 200
