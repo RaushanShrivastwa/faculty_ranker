@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load env vars at the top
+require('dotenv').config(); // Load .env variables at the very top
 
 const express = require('express');
 const cors = require('cors');
@@ -14,7 +14,7 @@ const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
-// ✅ Proper CORS setup
+// === 🔒 CORS CONFIGURATION ===
 const corsOptions = {
   origin: 'http://localhost:3000', // or use process.env.FRONTEND_URL
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -22,14 +22,17 @@ const corsOptions = {
   credentials: true,
 };
 
-app.options('*', cors(corsOptions)); // handle preflight
+// 🛡 Handle preflight first
+app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
-// ✅ Express middlewares
+
+// === 📦 Middleware ===
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ MongoDB Connection (memoized)
+// === 🔌 MongoDB Connection ===
 let isConnected = false;
+
 const connectDb = async () => {
   if (isConnected) {
     console.log('✅ Reusing MongoDB connection');
@@ -43,56 +46,53 @@ const connectDb = async () => {
     isConnected = true;
     console.log('✅ MongoDB connected');
   } catch (err) {
-    console.error('❌ MongoDB connection error:', err);
-    throw new Error('Failed to connect to MongoDB');
+    console.error('❌ MongoDB connection error:', err.message);
+    throw new Error('MongoDB connection failed');
   }
 };
 
-// Middleware to ensure DB is connected
 app.use(async (req, res, next) => {
   if (!isConnected) {
     try {
       await connectDb();
-    } catch (error) {
-      return res.status(500).json({ message: 'DB connection failed', error: error.message });
+    } catch (err) {
+      return res.status(500).json({ message: 'DB connection failed', error: err.message });
     }
   }
   next();
 });
 
-// ✅ Session & Passport setup (optional)
+// === 🧠 Session & Passport Auth ===
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'fallback-secret',
+  secret: process.env.SESSION_SECRET || 'secret-key',
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: true,
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ✅ Routes
+// === 🔗 Routes ===
 app.use('/', authRoutes);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/users', userRoutes);
 
-// ✅ Authenticated dashboard example
+// === 🔐 Protected Example Route ===
 app.get('/api/dashboard', jwtAuth, async (req, res) => {
   try {
     const User = require('./models/User');
     const Log = require('./models/Log');
-
     const user = await User.findById(req.user.id).select('-password');
     const logs = await Log.find({ userId: req.user.id }).sort({ timestamp: -1 });
-
     res.json({ user, logs });
-  } catch (error) {
-    console.error('Error in /api/dashboard:', error);
+  } catch (err) {
+    console.error('Dashboard error:', err.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// ✅ Health check route
-app.get('/api/health', (req, res) => {
-  res.status(200).send('OK');
-});
+// === 🩺 Health Check ===
+app.get('/api/health', (req, res) => res.status(200).send('OK'));
 
+// === 🚀 Export for Serverless ===
 module.exports = app;
