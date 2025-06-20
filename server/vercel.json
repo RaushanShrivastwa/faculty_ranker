@@ -4,7 +4,6 @@
     { "src": "index.js", "use": "@vercel/node" }
   ],
   "routes": [
-    // 1) Preflight CORS for ANY /api/*
     {
       "src": "/api/(.*)",
       "methods": ["OPTIONS"],
@@ -15,8 +14,6 @@
       },
       "dest": "index.js"
     },
-
-    // 2) Actual API requests — also return CORS headers
     {
       "src": "/api/(.*)",
       "methods": ["GET","POST","PUT","PATCH","DELETE"],
@@ -27,11 +24,7 @@
       },
       "dest": "index.js"
     },
-
-    // 3) Static assets (if any)
     { "handle": "filesystem" },
-
-    // 4) Catch‑all: serve your SPA
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
