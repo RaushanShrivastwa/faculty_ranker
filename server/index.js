@@ -3,6 +3,7 @@
 require('dotenv').config(); // Keep this at the very top to load environment variables
 
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
 // const path = require('path'); // No longer needed for serving static files
 const session = require('express-session');
