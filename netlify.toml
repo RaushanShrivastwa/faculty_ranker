@@ -1,10 +1,11 @@
+# netlify.toml (at repo root)
 [build]
   base      = "server"
   command   = "npm install"
-  functions = "server/functions"
-  publish   = "server"   # unused for pure functions
+  publish   = "server"           # points at your project root under `server/`
+  functions = "server/functions" # where api.js lives
 
 [[redirects]]
-  from = "/api/*"
-  to   = "/.netlify/functions/api/:splat"
+  from   = "/api/*"
+  to     = "/.netlify/functions/api/:splat"
   status = 200
