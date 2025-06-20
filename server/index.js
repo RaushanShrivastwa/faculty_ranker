@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load environment variables first
+require('dotenv').config(); // Load env vars at the top
 
 const express = require('express');
 const cors = require('cors');
@@ -6,70 +6,61 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const passport = require('./config/passport');
 const { jwtAuth } = require('./middleware/jwtAuth');
+
+// Routes
 const authRoutes = require('./routes/authRoutes');
 const facultyRoutes = require('./routes/facultyRoutes');
 const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
-// ✅ Handle CORS preflight and headers BEFORE anything else
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*'); // or '*' for open access
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end(); // Preflight success
-  }
-
-  next();
-});
-
-// ✅ CORS middleware (can be left with '*' if preflight is handled above)
+// ✅ Proper CORS setup
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true // only needed if using cookies (optional)
+  origin: 'http://localhost:3000', // or your frontend URL when deployed
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // only needed if using cookies
 }));
 
+// ✅ Express middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Connect to MongoDB
+// ✅ MongoDB Connection (memoized)
 let isConnected = false;
-
 const connectDb = async () => {
   if (isConnected) {
-    console.log('✅ Using existing MongoDB connection');
+    console.log('✅ Reusing MongoDB connection');
     return;
   }
   try {
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
     });
     isConnected = true;
-    console.log('✅ MongoDB connected successfully');
+    console.log('✅ MongoDB connected');
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);
     throw new Error('Failed to connect to MongoDB');
   }
 };
 
-// ✅ Ensure DB connection for each request
+// Middleware to ensure DB is connected
 app.use(async (req, res, next) => {
   if (!isConnected) {
     try {
       await connectDb();
     } catch (error) {
-      return res.status(500).json({ message: 'Database connection failed', error: error.message });
+      return res.status(500).json({ message: 'DB connection failed', error: error.message });
     }
   }
   next();
 });
 
-// ✅ Session & Passport
+// ✅ Session & Passport setup (optional)
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'session-secret',
+  secret: process.env.SESSION_SECRET || 'fallback-secret',
   resave: false,
   saveUninitialized: true
 }));
@@ -81,13 +72,15 @@ app.use('/', authRoutes);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/users', userRoutes);
 
-// ✅ Authenticated route example
+// ✅ Authenticated dashboard example
 app.get('/api/dashboard', jwtAuth, async (req, res) => {
   try {
     const User = require('./models/User');
     const Log = require('./models/Log');
+
     const user = await User.findById(req.user.id).select('-password');
     const logs = await Log.find({ userId: req.user.id }).sort({ timestamp: -1 });
+
     res.json({ user, logs });
   } catch (error) {
     console.error('Error in /api/dashboard:', error);
@@ -95,10 +88,9 @@ app.get('/api/dashboard', jwtAuth, async (req, res) => {
   }
 });
 
-// ✅ Health check route (optional)
+// ✅ Health check route
 app.get('/api/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// ✅ Export app for serverless
 module.exports = app;
