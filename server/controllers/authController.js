@@ -1,4 +1,3 @@
-// controllers/authController.js
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
@@ -13,7 +12,18 @@ const OTP_COOLDOWN_MS = 15 * 60 * 1000;
 
 // Helper
 function isVitapEmail(email) {
-  return email.endsWith('@vitapstudent.ac.in');
+  return email && email.endsWith('@vitapstudent.ac.in');
+}
+
+// Generate JWT with consistent payload fields
+function generateToken(user) {
+  const payload = {
+    id: user._id,
+    role: user.role,
+    email: user.email,
+    banned: user.banned || false
+  };
+  return jwt.sign(payload, process.env.JWT_SECRET || 'jwt-secret', { expiresIn: '1h' });
 }
 
 exports.requestOTP = async (req, res) => {
@@ -67,8 +77,8 @@ exports.verifyOTP = async (req, res) => {
   if (!pending) return res.status(400).json({ message: 'No pending signup found for this email' });
   if (pending.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
 
-  const hashedPassword = await bcrypt.hash(pending.password, 10);
   try {
+    const hashedPassword = await bcrypt.hash(pending.password, 10);
     const user = await User.create({
       username: pending.name,
       email: pending.email,
@@ -76,14 +86,16 @@ exports.verifyOTP = async (req, res) => {
       password: hashedPassword,
       provider: 'local',
       role: 'user',
-      verified: true
+      verified: true,
+      banned: false
     });
     delete tempSignups[email];
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'jwt-secret', { expiresIn: '1h' });
-    res.status(201).json({ message: 'User created successfully', token });
+
+    const token = generateToken(user);
+    return res.status(201).json({ message: 'User created successfully', token });
   } catch (error) {
     console.error('Error creating user:', error);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -106,12 +118,13 @@ exports.signIn = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'jwt-secret', { expiresIn: '1h' });
+
+    const token = generateToken(user);
     await new Analytics({ userId: user._id, actions: ['logged_in'] }).save();
-    res.json({ message: 'Sign-in successful', token });
+    return res.json({ message: 'Sign-in successful', token });
   } catch (error) {
     console.error('Sign-in error:', error);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -137,10 +150,11 @@ exports.googleCallback = async (req, res) => {
     }
   }
 
-  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'jwt-secret', { expiresIn: '1h' });
-  res.redirect(`/users?token=${token}`);
+  const token = generateToken(user);
+  // Send token to client via redirect or JSON payload
+  return res.redirect(`/users?token=${token}`);
 };
 
 exports.logout = (req, res) => {
-  res.json({ message: 'User logged out successfully' });
+  return res.json({ message: 'User logged out successfully' });
 };
