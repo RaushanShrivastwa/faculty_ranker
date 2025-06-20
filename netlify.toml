@@ -1,11 +1,14 @@
-# netlify.toml (at repo root)
+# netlify.toml
 [build]
-  base      = "server"
-  command   = "npm install"
-  publish   = "server"           # points at your project root under `server/`
-  functions = "server/functions" # where api.js lives
+  command   = "npm --prefix server install"    # Install deps in server/
+  publish   = "server"                         # This just needs to point *somewhere*, won't be used for API
+  functions = "server/functions"               # Correct relative path from root
+
+[functions]
+  external_node_modules = ["express", "serverless-http", "cors", "dotenv", "mongoose"]
+  node_bundler = "esbuild"
 
 [[redirects]]
-  from   = "/api/*"
-  to     = "/.netlify/functions/api/:splat"
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
   status = 200
