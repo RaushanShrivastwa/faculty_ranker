@@ -73,9 +73,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // === 🔗 Routes ===
-app.use('/auth', authRoutes);
-app.use('/faculty', facultyRoutes);
-app.use('/users', userRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/faculty', facultyRoutes);
+app.use('/api/users', userRoutes);
 
 // === 🔐 Protected Example Route ===
 app.get('/dashboard', jwtAuth, async (req, res) => {
