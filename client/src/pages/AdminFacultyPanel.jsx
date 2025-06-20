@@ -1,16 +1,17 @@
-// src/components/AdminFacultyPanel.jsx
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 const AdminFacultyPanel = () => {
   const [faculties, setFaculties] = useState([]);
-  const [search, setSearch]       = useState('');
-  const [filtered, setFiltered]   = useState([]);
-  const { user }                  = useAuth();
+  const [search, setSearch] = useState('');
+  const [filtered, setFiltered] = useState([]);
+  const { user } = useAuth();
+
+  const API_URL = process.env.REACT_APP_API_URL_FACULTY;
 
   useEffect(() => {
-    axios.get('/api/faculty/unverified', {
+    axios.get(`${API_URL}/unverified`, {
       headers: { Authorization: `Bearer ${user.token}` }
     })
     .then(res => {
@@ -18,10 +19,10 @@ const AdminFacultyPanel = () => {
       setFiltered(res.data);
     })
     .catch(console.error);
-  }, [user]);
+  }, [user, API_URL]);
 
   const handleVerify = (id) => {
-    axios.put(`/api/faculty/verify/${id}`, {}, {
+    axios.put(`${API_URL}/verify/${id}`, {}, {
       headers: { Authorization: `Bearer ${user.token}` }
     }).then(() => {
       const updated = faculties.filter(f => f._id !== id);
@@ -31,7 +32,7 @@ const AdminFacultyPanel = () => {
   };
 
   const handleDelete = (id) => {
-    axios.delete(`/api/faculty/${id}`, {
+    axios.delete(`${API_URL}/${id}`, {
       headers: { Authorization: `Bearer ${user.token}` }
     }).then(() => {
       const updated = faculties.filter(f => f._id !== id);
