@@ -1,9 +1,7 @@
-require('dotenv').config(); // Load .env variables at the very top
-
+// server/index.js
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const session = require('express-session');
 const passport = require('./config/passport');
 const { jwtAuth } = require('./middleware/jwtAuth');
 
@@ -16,69 +14,52 @@ const app = express();
 
 // === 🔒 CORS CONFIGURATION ===
 const corsOptions = {
-  origin: 'http://localhost:3000', // or use process.env.FRONTEND_URL
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 };
 
-// 🛡 Handle preflight first
-app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // === 📦 Middleware ===
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // === 🔌 MongoDB Connection ===
-let isConnected = false;
-
 const connectDb = async () => {
-  if (isConnected) {
-    console.log('✅ Reusing MongoDB connection');
-    return;
-  }
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
+  if (!global._mongoClientPromise) {
+    global._mongoClientPromise = mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // fail fast if Mongo is unreachable
     });
-    isConnected = true;
-    console.log('✅ MongoDB connected');
-  } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
-    throw new Error('MongoDB connection failed');
   }
+  return global._mongoClientPromise;
 };
 
+// Connect to DB on every request (cached)
 app.use(async (req, res, next) => {
-  if (!isConnected) {
-    try {
-      await connectDb();
-    } catch (err) {
-      return res.status(500).json({ message: 'DB connection failed', error: err.message });
-    }
+  try {
+    await connectDb();
+    next();
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err.message);
+    return res.status(500).json({ message: 'DB connection failed', error: err.message });
   }
-  next();
 });
 
-// === 🧠 Session & Passport Auth ===
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'secret-key',
-  resave: false,
-  saveUninitialized: true,
-}));
-
+// === 🔐 JWT-Based Auth ===
 app.use(passport.initialize());
-app.use(passport.session());
 
-// === 🔗 Routes ===
+// === 🔗 Routes (under /api/*) ===
 app.use('/api/auth', authRoutes);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/users', userRoutes);
 
-// === 🔐 Protected Example Route ===
-app.get('/dashboard', jwtAuth, async (req, res) => {
+// === 🔐 Example Protected Route ===
+app.get('/api/dashboard', jwtAuth, async (req, res) => {
   try {
     const User = require('./models/User');
     const Log = require('./models/Log');
@@ -92,7 +73,7 @@ app.get('/dashboard', jwtAuth, async (req, res) => {
 });
 
 // === 🩺 Health Check ===
-app.get('/health', (req, res) => res.status(200).send('OK'));
+app.get('/api/health', (req, res) => res.status(200).send('OK'));
 
-// === 🚀 Export for Serverless ===
+// === 🚀 Export for Serverless (no express-session) ===
 module.exports = app;
