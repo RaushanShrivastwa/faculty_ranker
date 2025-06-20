@@ -1,34 +1,29 @@
-# netlify.toml at the root of your monorepo
+# netlify.toml (at project root)
 
-# This is the main build settings for your site (frontend)
 [build]
-  # This tells Netlify to change into your 'client/' directory
-  # before running the 'command' and looking for the 'publish' directory.
-  base = "client/"
-  command = "npm run build" # Or "yarn build"
-  publish = "build"  # This is relative to the 'base' directory (client/build)
+  # Don’t change into client/ first — run your frontend build from the root
+  base      = "."  
+  # Build your React app by cd’ing into client/
+  command   = "cd client && npm run build"
+  # Publish the output of that build
+  publish   = "client/build"
 
-
-# This section explicitly defines settings for Netlify Functions.
-# The 'directory' path here is relative to the REPOSITORY ROOT,
-# ensuring it targets only your backend function.
 [functions]
-  directory = "server/functions" # CORRECTED: Path to functions, now server/functions
+  # This path is now correct—relative to the repo root
+  directory = "server/functions"
+  # Your external modules for Express + serverless-http
   external_node_modules = ["express", "serverless-http"]
   node_bundler = "esbuild"
 
-
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  # Proxy any /api/* calls to your Lambda
+  from   = "/api/*"
+  to     = "/.netlify/functions/api/:splat"
   status = 200
-  force = true
+  force  = true
 
-# Optional: Configuration for Netlify Dev (local development using `netlify dev`)
 [dev]
-  command = "npm start --prefix client" # Or "yarn start --cwd client"
-  port = 3000
-  # The functions path here should also be relative to the REPOSITORY ROOT for local dev
-  functions = "server/functions" # CORRECTED: Path for local dev
-  publish = "build"
+  command   = "npm start --prefix client"
   framework = "#custom"
+  publish   = "client/build"
+  functions = "server/functions"
