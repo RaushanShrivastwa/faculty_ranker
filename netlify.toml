@@ -1,29 +1,16 @@
-# netlify.toml (at project root)
-
 [build]
-  # Don’t change into client/ first — run your frontend build from the root
   base      = "."  
-  # Build your React app by cd’ing into client/
-  command   = "cd client && npm run build"
-  # Publish the output of that build
+  # first cd into client, install deps, then build
+  command   = "cd client && npm ci && npm run build"
   publish   = "client/build"
 
 [functions]
-  # This path is now correct—relative to the repo root
   directory = "server/functions"
-  # Your external modules for Express + serverless-http
-  external_node_modules = ["express", "serverless-http"]
+  external_node_modules = ["express","serverless-http"]
   node_bundler = "esbuild"
 
 [[redirects]]
-  # Proxy any /api/* calls to your Lambda
   from   = "/api/*"
   to     = "/.netlify/functions/api/:splat"
   status = 200
   force  = true
-
-[dev]
-  command   = "npm start --prefix client"
-  framework = "#custom"
-  publish   = "client/build"
-  functions = "server/functions"
