@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// Create an Axios instance with a base URL
+// Create an Axios instance with a dynamic base URL
 const API = axios.create({
-  baseURL: '/api/faculty' // Assuming your faculty endpoints are under /api/faculty
+  baseURL: process.env.REACT_APP_API_BASE + '/faculty'
 });
 
 /**
@@ -17,14 +17,13 @@ export const getFacultyPage = async (page = 1, facultiesPerPage = 10, searchTerm
     const res = await API.get('/all', {
       params: {
         page,
-        limit: facultiesPerPage, // Use 'limit' as a common parameter name for items per page
-        search: searchTerm      // Use 'search' for the search term
+        limit: facultiesPerPage,
+        search: searchTerm
       }
     });
     return res.data;
   } catch (error) {
     console.error('Error fetching faculty page:', error);
-    // You might want to throw the error or return a specific error object
     throw error;
   }
 };
