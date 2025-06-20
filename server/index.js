@@ -15,13 +15,15 @@ const userRoutes = require('./routes/userRoutes');
 const app = express();
 
 // ✅ Proper CORS setup
-app.use(cors({
-  origin: 'http://localhost:3000', // or your frontend URL when deployed
+const corsOptions = {
+  origin: 'http://localhost:3000', // or use process.env.FRONTEND_URL
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true // only needed if using cookies
-}));
+  credentials: true,
+};
 
+app.options('*', cors(corsOptions)); // handle preflight
+app.use(cors(corsOptions));
 // ✅ Express middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
