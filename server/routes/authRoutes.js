@@ -14,11 +14,11 @@ router.post('/signin',      authCtrl.signIn);
 
 // Google OAuth routes
 router.get(
-  '/auth/google',
+  '/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 router.get(
-  '/auth/google/callback',
+  '/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   authCtrl.googleCallback
 );
