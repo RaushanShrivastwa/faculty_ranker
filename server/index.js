@@ -12,7 +12,7 @@ const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
-// === 🔒 CORS CONFIGURATION ===
+// === CORS ===
 const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -23,48 +23,53 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-// === 📦 Middleware ===
+// === Body Parsing ===
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// === 🔌 MongoDB Connection ===
+// === MongoDB Connection ===
+let isConnected = false;
+
 const connectDb = async () => {
-  if (!global._mongoClientPromise) {
-    global._mongoClientPromise = mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000, // fail fast if Mongo is unreachable
-    });
-  }
-  return global._mongoClientPromise;
+  if (isConnected) return;
+
+  await mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+  });
+
+  isConnected = true;
+  console.log('✅ MongoDB connected');
 };
 
-// Connect to DB on every request (cached)
 app.use(async (req, res, next) => {
   try {
     await connectDb();
     next();
   } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
-    return res.status(500).json({ message: 'DB connection failed', error: err.message });
+    console.error('❌ MongoDB error:', err.message);
+    res.status(500).send('DB error');
   }
 });
 
-// === 🔐 JWT-Based Auth ===
+// === Auth (NO express-session) ===
 app.use(passport.initialize());
 
-// === 🔗 Routes (under /api/*) ===
+// === Routes ===
 app.use('/api/auth', authRoutes);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/users', userRoutes);
 
-// === 🔐 Example Protected Route ===
+// === Protected Route ===
 app.get('/api/dashboard', jwtAuth, async (req, res) => {
   try {
     const User = require('./models/User');
     const Log = require('./models/Log');
+
     const user = await User.findById(req.user.id).select('-password');
     const logs = await Log.find({ userId: req.user.id }).sort({ timestamp: -1 });
+
     res.json({ user, logs });
   } catch (err) {
     console.error('Dashboard error:', err.message);
@@ -72,8 +77,7 @@ app.get('/api/dashboard', jwtAuth, async (req, res) => {
   }
 });
 
-// === 🩺 Health Check ===
+// === Health Check ===
 app.get('/api/health', (req, res) => res.status(200).send('OK'));
 
-// === 🚀 Export for Serverless (no express-session) ===
 module.exports = app;
