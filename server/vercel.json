@@ -1,21 +1,37 @@
 {
   "version": 2,
+  "builds": [
+    { "src": "index.js", "use": "@vercel/node" }
+  ],
   "routes": [
+    // 1) Preflight CORS for ANY /api/*
     {
       "src": "/api/(.*)",
       "methods": ["OPTIONS"],
       "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization"
+        "Access-Control-Allow-Origin":       "*",
+        "Access-Control-Allow-Methods":      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers":      "Content-Type,Authorization"
       },
-      "dest": "/api/index.js"
+      "dest": "index.js"
     },
+
+    // 2) Actual API requests — also return CORS headers
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.js"
+      "methods": ["GET","POST","PUT","PATCH","DELETE"],
+      "headers": {
+        "Access-Control-Allow-Origin":       "*",
+        "Access-Control-Allow-Methods":      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers":      "Content-Type,Authorization"
+      },
+      "dest": "index.js"
     },
+
+    // 3) Static assets (if any)
     { "handle": "filesystem" },
+
+    // 4) Catch‑all: serve your SPA
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
