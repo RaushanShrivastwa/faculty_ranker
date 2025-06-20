@@ -152,7 +152,7 @@ exports.googleCallback = async (req, res) => {
 
   const token = generateToken(user);
   // Send token to client via redirect or JSON payload
-  return res.redirect(`/users?token=${token}`);
+  return res.redirect(`${process.env.FRONTEND_URL}/users?token=${token}`);
 };
 
 exports.logout = (req, res) => {
