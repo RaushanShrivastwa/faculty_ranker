@@ -1,8 +1,9 @@
-// src/components/Login.jsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import '../styles/Login.css'
+
+const API_URL = "https://faculty-ranker-iu1g.vercel.app";
 
 function parseJWT(token) {
   if (!token) throw new Error('Missing token')
@@ -31,7 +32,7 @@ export default function Login() {
   const handleSubmit = async e => {
     e.preventDefault()
     try {
-      const res = await fetch('/signin', {
+      const res = await fetch(`${API_URL}/api/auth/signin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData),
@@ -101,7 +102,7 @@ export default function Login() {
         />
         <button type="submit">Login</button>
 
-        <a href="/auth/google" className="google-login-btn">
+        <a href={`${API_URL}/api/auth/google`} className="google-login-btn">
           <img src="https://i.postimg.cc/3NGKBY4V/google-icon.png" alt="Google" />
           Login with Google
         </a>
