@@ -2,29 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getToken, removeToken } from '../utils/auth';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [logs, setLogs] = useState([]);
 
-  // On mount, check for token in query or localStorage
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tokenFromQuery = params.get('token');
     const storedToken = getToken();
     const token = tokenFromQuery || storedToken;
+
     if (tokenFromQuery) {
-      // Save token from Google OAuth
       localStorage.setItem('token', tokenFromQuery);
     }
+
     if (!token) {
-      // No token, redirect to login
       navigate('/');
       return;
     }
-    // Fetch user info
-    fetch('/api/dashboard', {
+
+    fetch(`${API_URL}/dashboard`, {
       headers: { 'Authorization': token }
     }).then(res => {
       if (res.status === 401) {
@@ -47,6 +48,7 @@ function Dashboard() {
   };
 
   if (!user) return null;
+
   return (
     <div className="auth-card">
       <h1>Welcome back, <span className="dashboard-username">{user.username}</span></h1>
@@ -56,10 +58,13 @@ function Dashboard() {
       <h2>Activity Log</h2>
       <ul>
         {logs.map((log, idx) => (
-          <li key={idx}>{new Date(log.timestamp).toLocaleString()}: {log.action}</li>
+          <li key={idx}>
+            {new Date(log.timestamp).toLocaleString()}: {log.action}
+          </li>
         ))}
       </ul>
     </div>
   );
 }
+
 export default Dashboard;
