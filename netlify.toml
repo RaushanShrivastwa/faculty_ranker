@@ -1,30 +1,41 @@
-# netlify.toml (at repo root)
+# netlify.toml (place at the project root)
 
 [build]
-  base    = "."  
+  # Run from repo root
+  base    = "."
+  # 1) install server deps  2) install client deps  3) build client
   command = """
-    # 1) Install your server's deps so that esbuild can bundle them
     npm ci --prefix server && \
-    # 2) Install your client's deps
     npm ci --prefix client && \
-    # 3) Build your React app
     npm run build --prefix client
   """
+  # Publish the CRA build output
   publish = "client/build"
 
 [functions]
-  directory               = "server/functions"  
+  # Your serverless functions live here
+  directory               = "server/functions"
+  # These modules are external (don’t bundle them into each function)
   external_node_modules   = ["express", "serverless-http"]
   node_bundler            = "esbuild"
 
+# Proxy any /api/* calls to your Lambda named "api"
 [[redirects]]
   from   = "/api/*"
   to     = "/.netlify/functions/api/:splat"
   status = 200
   force  = true
 
+# Catch-all: serve index.html for any other path so React Router works on refresh
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+  force  = true
+
 [dev]
+  # Local Netlify Dev command
   command   = "npm start --prefix client"
-  framework = "#custom"
   publish   = "client/build"
   functions = "server/functions"
+  framework = "#custom"
