@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "main": "index.js",
     "scripts": {
+        "build:functions": "netlify-lambda build functions --output dist/functions",
         "start": "node index.js"
     },
     "dependencies": {
