@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+const API_URL = process.env.REACT_APP_API;
+
 const COLORS = ['#f44336', '#4CAF50']; // Red = banned, Green = active
 const COLORS2 = ['#00C49F', '#FF8042']; // Blue = student, Orange = admin
 
@@ -57,7 +59,7 @@ const UserBanStatusGraph = ({ users }) => {
 
 const UserStatsGraph = ({ users }) => {
   const studentCount = users.filter(u => u.role === 'user').length;
-  const adminCount   = users.filter(u => u.role === 'admin').length;
+  const adminCount = users.filter(u => u.role === 'admin').length;
   const data = [
     { name: 'Users', value: studentCount },
     { name: 'Admins', value: adminCount },
@@ -93,7 +95,7 @@ const AdminUserManagement = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    fetch('/api/users', {
+    fetch(`${API_URL}/users`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
@@ -126,7 +128,7 @@ const AdminUserManagement = () => {
   const toggleBanStatus = async (_id, currentStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/users/ban/${_id}`, {
+      const res = await fetch(`${API_URL}/users/ban/${_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -228,8 +230,8 @@ const AdminUserManagement = () => {
             }}
           >
             <div>
-              <strong>{user.username}</strong><br/>
-              <small>{user.email}</small><br/>
+              <strong>{user.username}</strong><br />
+              <small>{user.email}</small><br />
               Status:{' '}
               <b style={{ color: user.banned ? 'red' : 'green' }}>
                 {user.banned ? 'Banned' : 'Active'}
