@@ -99,4 +99,8 @@ app.get('/api/dashboard', jwtAuth, async (req, res) => {
     }
 });
 
+app.get('/api/health', async (req, res) => {
+  res.status(200).send('OK');
+});
+
 module.exports = app;
