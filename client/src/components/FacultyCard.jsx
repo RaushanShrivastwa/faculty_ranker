@@ -1,21 +1,28 @@
 // src/components/FacultyCard.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import '../styles/FacultyCard.css'; // you can create this or fold styles into FacultyList.css
+import '../styles/FacultyCard.css';
 
 const FacultyCard = ({ faculty, isMobile }) => {
-  // clamp ratings 0–5
+  const [imageError, setImageError] = useState(false);
+
   const normalize = v => Math.min(Math.max(v || 0, 0), 5);
   const widthPct = v => `${normalize(v) * 20}%`;
 
   return (
     <div className={`faculty-card ${isMobile ? 'mobile' : ''}`}>
       <div className="card-image">
-        <img
-          src={faculty.image_url || ''}
-          alt={faculty.name}
-          onError={e => { e.target.src = ''; }}
-        />
+        {faculty.image_url && !imageError ? (
+          <img
+            src={faculty.image_url}
+            alt={faculty.name || 'Faculty'}
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="image-placeholder">
+            Image to be added soon
+          </div>
+        )}
       </div>
 
       <div className="card-content">
@@ -25,8 +32,8 @@ const FacultyCard = ({ faculty, isMobile }) => {
         </p>
 
         <div className="card-ratings">
-          {['teaching_rating','attendance_rating','correction_rating'].map(key => {
-            let label = key.replace('_rating','').replace(/^\w/,c=>c.toUpperCase());
+          {['teaching_rating', 'attendance_rating', 'correction_rating'].map(key => {
+            const label = key.replace('_rating', '').replace(/^\w/, c => c.toUpperCase());
             return (
               <div key={key} className="rating-bar">
                 <span className="rating-label">{label}</span>
