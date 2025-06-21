@@ -1,13 +1,29 @@
+/* 1) Global reset for predictable box sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* 2) Prevent horizontal overflow on the entire page */
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  font-family: sans-serif;
+  background: #111827;
+  color: #fff;
+}
+
+/* 3) Main container */
 .faculty-list-container {
-  padding-top: 7rem;
-  background: linear-gradient(to bottom,#1f2937,#111827);
+  padding-top: 7rem;                   /* pushes content below fixed navbar */
+  background: linear-gradient(to bottom, #1f2937, #111827);
   min-height: 100vh;
   padding: 2rem 1rem;
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
 }
 
+/* 4) Search + Add button wrapper */
 .search-add-container {
   max-width: 1024px;
   margin: 0 auto 2rem;
@@ -16,42 +32,47 @@
   align-items: center;
   gap: 1rem;
   position: relative;
-  padding-top: 0.5rem; /* adds spacing from navbar */
+  padding-top: 0.5rem;
+  overflow: visible;                   /* allow dropdown to overflow */
 }
 
+/* 5) Search box */
 .search-box {
   position: relative;
   flex: 1;
   display: flex;
-  min-width: 0;
+  min-width: 0;                        /* helps flex children shrink */
 }
 
+/* 6) Search input styling */
 .search-box input,
 .search-input {
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 5rem 0.75rem 1rem;   /* room for clear & search buttons */
   border: 2px solid #d1d5db;
   border-radius: 0.5rem;
   color: #111827;
   background: #fff;
   max-width: 100%;
-  box-sizing: border-box;
 }
 
+/* 7) Clear (×) button */
 .clear-btn {
   position: absolute;
-  right: 4rem;
+  right: 2.5rem;                       /* inside the 5rem padding area */
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   font-size: 1.25rem;
   color: #6b7280;
+  cursor: pointer;
 }
 
+/* 8) Search (🔍) button */
 .search-btn {
   position: absolute;
-  right: 0;
+  right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
   background: #7c3aed;
@@ -59,11 +80,15 @@
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 0.5rem;
+  cursor: pointer;
 }
 
-.suggestions-dropdown {
+/* 9) Suggestions dropdown & no-suggestions/message states */
+.suggestions-dropdown,
+.no-suggestions,
+.suggestion-loading {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 0.25rem);           /* sits just below the input border */
   left: 0;
   width: 100%;
   background: #fff;
@@ -73,16 +98,22 @@
   overflow: auto;
   z-index: 10;
   box-sizing: border-box;
+  color: #000;
+  text-align: left;
 }
 
+/* 10) Individual suggestion item */
 .suggestion-item {
   display: flex;
   align-items: center;
   padding: 0.5rem;
   cursor: pointer;
-  color: #000;
+}
+.suggestion-item:hover {
+  background: #f3f4f6;
 }
 
+/* 11) Avatar in suggestions */
 .suggestion-img {
   width: 2.5rem;
   height: 2.5rem;
@@ -90,41 +121,37 @@
   margin-right: 0.5rem;
 }
 
+/* 12) Text inside suggestion */
 .suggestion-texts p:first-child {
   font-weight: 500;
+  margin: 0;
+}
+.suggestion-texts p:last-child {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #4b5563;
 }
 
-.no-suggestions,
-.suggestion-loading {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  padding: 0.5rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  z-index: 10;
-  text-align: center;
-  color: #000;
-}
-
+/* 13) Add button */
 .add-btn {
-  background: linear-gradient(to right,#9333ea,#4f46e5);
+  background: linear-gradient(to right, #9333ea, #4f46e5);
   color: #fff;
   padding: 0.75rem 1.5rem;
   border-radius: 9999px;
   text-decoration: none;
+  white-space: nowrap;
 }
 
+/* 14) Cards grid */
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill,minmax(16rem,1fr));
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
   gap: 1rem;
   max-width: 1024px;
   margin: 0 auto;
 }
 
+/* 15) Loading spinner container */
 .loading-spinner {
   display: flex;
   justify-content: center;
@@ -132,13 +159,13 @@
   height: 12rem;
 }
 
+/* 16) Error & Empty states */
 .error-state,
 .empty-state {
   text-align: center;
   padding: 2rem;
   color: #d1d5db;
 }
-
 .error-state button {
   margin-top: 1rem;
   background: #7c3aed;
@@ -146,8 +173,10 @@
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 0.5rem;
+  cursor: pointer;
 }
 
+/* 17) Pagination */
 .pagination {
   display: flex;
   align-items: center;
@@ -155,7 +184,6 @@
   gap: 0.5rem;
   margin: 2rem 0;
 }
-
 .pagination button {
   padding: 0.5rem 1rem;
   background: #374151;
@@ -164,8 +192,16 @@
   border-radius: 0.25rem;
   cursor: pointer;
 }
-
 .pagination button:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* 18) Mobile tweaks (optional) */
+@media (max-width: 400px) {
+  .search-box input {
+    padding-right: 4.5rem;
+  }
+  .clear-btn { right: 2rem; }
+  .search-btn { right: 0.25rem; }
 }
