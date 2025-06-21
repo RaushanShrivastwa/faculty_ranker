@@ -43,7 +43,7 @@ const FacultyCard = ({ faculty, isMobile }) => {
                     style={{ width: widthPct(faculty[key]) }}
                   />
                 </div>
-                <span className="rating-score">{normalize(faculty[key])}/5</span>
+                <span className="rating-score">{normalize(faculty[key]).toFixed(2)}/5</span>
               </div>
             );
           })}
