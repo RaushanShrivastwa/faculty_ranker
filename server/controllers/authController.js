@@ -1,10 +1,10 @@
 // controllers/authController.js
 require('dotenv').config();
-const bcrypt  = require('bcrypt');
-const crypto  = require('crypto');
-const jwt     = require('jsonwebtoken');
-const User    = require('../models/User');
-const Analytics = require('../models/Analytics');
+const bcrypt        = require('bcrypt');
+const crypto        = require('crypto');
+const jwt           = require('jsonwebtoken');
+const User          = require('../models/User');
+const Analytics     = require('../models/Analytics');
 const { sendOTPEmail, sendPasswordEmail } = require('../services/emailService');
 
 const tempSignups = {};
@@ -54,8 +54,12 @@ exports.requestOTP = async (req, res) => {
 exports.verifyOTP = async (req, res) => {
   const { email, otp } = req.body;
   const pending = tempSignups[email];
-  if (!pending) return res.status(400).json({ message: 'No pending signup for this email' });
-  if (pending.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
+  if (!pending) {
+    return res.status(400).json({ message: 'No pending signup for this email' });
+  }
+  if (pending.otp !== otp) {
+    return res.status(400).json({ message: 'Invalid OTP' });
+  }
 
   try {
     const hash = await bcrypt.hash(pending.password, 10);
@@ -66,12 +70,18 @@ exports.verifyOTP = async (req, res) => {
       password: hash,
       provider: 'local',
       role: 'user',
-      verified: true
+      verified: true,
+      banned: false
     });
     delete tempSignups[email];
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: user._id,
+        role: user.role,
+        email: user.email,
+        banned: user.banned
+      },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -102,10 +112,16 @@ exports.signIn = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: user._id,
+        role: user.role,
+        email: user.email,
+        banned: user.banned
+      },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
+
     await new Analytics({ userId: user._id, actions: ['logged_in'] }).save();
     return res.json({ message: 'Sign-in successful', token });
   } catch (err) {
@@ -138,25 +154,25 @@ exports.googleCallback = async (req, res) => {
     }
   }
 
-  // Sign JWT
+  // Sign JWT with email & banned flag
   const token = jwt.sign(
-    { id: user._id, role: user.role },
+    {
+      id: user._id,
+      role: user.role,
+      email: user.email,
+      banned: user.banned
+    },
     process.env.JWT_SECRET,
     { expiresIn: '1h' }
   );
 
   // Redirect based on role
   if (user.role === 'admin') {
-    return res.redirect(
-      `${process.env.FRONTEND_URL}/users?token=${token}`
-    );
+    return res.redirect(`${process.env.FRONTEND_URL}/users?token=${token}`);
   } else {
-    return res.redirect(
-      `${process.env.FRONTEND_URL}/facultyList?token=${token}`
-    );
+    return res.redirect(`${process.env.FRONTEND_URL}/facultyList?token=${token}`);
   }
 };
-
 
 exports.logout = (req, res) => {
   // Stateless JWT—nothing to clear server‐side
