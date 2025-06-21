@@ -1,39 +1,144 @@
 /*────────────────────────────────────────────────────────────────────
-  1) Global reset & page overflow
+  1) GLOBAL RESET & BODY
 ────────────────────────────────────────────────────────────────────*/
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html, body {
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;       /* kill horizontal scroll globally */
+  overflow-x: hidden;       /* kill horizontal scroll */
   font-family: sans-serif;
   background: #111827;
   color: #fff;
 }
 
 /*────────────────────────────────────────────────────────────────────
-  2) Navbar (so dropdown never covers it)
+  2) NAVBAR
 ────────────────────────────────────────────────────────────────────*/
-nav, .navbar {
+nav,
+.navbar-default,
+.navbar-scrolled {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 4rem;             /* adjust to your actual navbar height */
+  height: 4rem;             /* match your toolbar height */
+  z-index: 10000;           /* always on top */
+  display: flex;
+  align-items: center;
+  background: rgba(31,41,55,0.9);
+  backdrop-filter: blur(10px);
+}
+
+.navbar-scrolled {
   background: #1f2937;
-  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 
 /*────────────────────────────────────────────────────────────────────
-  3) Main container
+  3) NAV CONTENT
+────────────────────────────────────────────────────────────────────*/
+.nav-container {
+  max-width: 1024px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 1rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+.logo-icon {
+  width: 2rem;
+  height: 2rem;
+  color: #a855f7;
+}
+.logo-text {
+  margin-left: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #fff;
+}
+.logo-highlight {
+  color: #c084fc;
+}
+
+.desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.nav-link {
+  color: #d1d5db;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.profile-dropdown {
+  position: relative;
+}
+.profile-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: #8b5cf6;
+  color: #fff;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+  background: #374151;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+}
+.dropdown-item {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #d1d5db;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.mobile-menu-btn {
+  display: none;
+}
+@media (max-width: 767px) {
+  .desktop-nav {
+    display: none;
+  }
+  .mobile-menu-btn {
+    display: block;
+  }
+  .mobile-menu {
+    background: #374151;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .mobile-link {
+    color: #d1d5db;
+    text-decoration: none;
+    font-size: 1rem;
+  }
+}
+
+/*────────────────────────────────────────────────────────────────────
+  4) MAIN CONTAINER
 ────────────────────────────────────────────────────────────────────*/
 .faculty-list-container {
-  padding-top: 5rem;         /* navbar height (4rem) + 1rem gap */
+  padding-top: 5rem;         /* 4rem navbar + 1rem gap */
   background: linear-gradient(to bottom, #1f2937, #111827);
   min-height: 100vh;
   padding: 2rem 1rem;
@@ -41,36 +146,36 @@ nav, .navbar {
 }
 
 /*────────────────────────────────────────────────────────────────────
-  4) Search + Add wrapper
+  5) SEARCH + ADD BUTTON WRAPPER
 ────────────────────────────────────────────────────────────────────*/
 .search-add-container {
   max-width: 1024px;
-  margin: 0 auto 2rem;
+  margin: 1rem auto 2rem;    /* 1rem top pushes it below navbar */
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
   position: relative;
-  padding-top: 0.5rem;
-  overflow: visible;        /* allow dropdown to escape */
+  overflow: visible;         /* let dropdown show outside */
+  z-index: 0;                /* under the navbar */
+  padding-top: 0;            /* no extra padding here */
 }
 
 /*────────────────────────────────────────────────────────────────────
-  5) Search box & input
+  6) SEARCH BOX + INPUT
 ────────────────────────────────────────────────────────────────────*/
 .search-box {
   position: relative;       /* positioning context for dropdown */
-  z-index: 1;               /* sits below the dropdown */
   flex: 1;
   display: flex;
-  min-width: 0;             /* allows child to shrink properly */
+  min-width: 0;             /* allow it to shrink in flex */
 }
 
-.search-box .search-input,
-.search-box input {
+.search-box input,
+.search-input {
   flex: 1;
   width: 100%;
-  padding: 0.75rem 5rem 0.75rem 1rem; /* reserve space for buttons */
+  padding: 0.75rem 5rem 0.75rem 1rem; /* room for the buttons */
   border: 2px solid #d1d5db;
   border-radius: 0.5rem;
   background: #fff;
@@ -78,25 +183,25 @@ nav, .navbar {
 }
 
 /*────────────────────────────────────────────────────────────────────
-  6) Buttons inside the search box
+  7) CLEAR & SUBMIT BUTTONS
 ────────────────────────────────────────────────────────────────────*/
 .clear-btn {
   position: absolute;
   top: 50%;
-  right: 2.5rem;            /* inside the input’s right padding */
+  right: 2.5rem;            /* uses the 5rem padding space */
   transform: translateY(-50%);
   background: none;
   border: none;
   font-size: 1.25rem;
   color: #6b7280;
   cursor: pointer;
-  z-index: 2;
+  z-index: 1;
 }
 
 .search-btn {
   position: absolute;
   top: 50%;
-  right: 0.5rem;            /* snug to the input’s right edge */
+  right: 0.5rem;
   transform: translateY(-50%);
   background: #7c3aed;
   color: #fff;
@@ -104,17 +209,17 @@ nav, .navbar {
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  z-index: 2;
+  z-index: 1;
 }
 
 /*────────────────────────────────────────────────────────────────────
-  7) Autocomplete dropdown / no-suggestions / loading
+  8) AUTOCOMPLETE DROPDOWN
 ────────────────────────────────────────────────────────────────────*/
 .search-box .suggestions-dropdown,
 .search-box .no-suggestions,
 .search-box .suggestion-loading {
   position: absolute;
-  top: calc(100% + 0.25rem); /* 4px below the input border */
+  top: calc(100% + 4px);    /* sits 4px below the input border */
   left: 0;
   width: 100%;
   background: #fff;
@@ -122,9 +227,8 @@ nav, .navbar {
   border-radius: 0.5rem;
   max-height: 16rem;
   overflow-y: auto;
-  z-index: 3;                /* above everything in search-box */
+  z-index: 2;                /* above the search box, below navbar still */
   color: #000;
-  text-align: left;
 }
 
 /* Suggestion items */
@@ -137,16 +241,12 @@ nav, .navbar {
 .suggestion-item:hover {
   background: #f3f4f6;
 }
-
-/* Avatar inside suggestions */
 .suggestion-img {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 9999px;
   margin-right: 0.5rem;
 }
-
-/* Text in suggestion */
 .suggestion-texts p {
   margin: 0;
 }
@@ -159,7 +259,7 @@ nav, .navbar {
 }
 
 /*────────────────────────────────────────────────────────────────────
-  8) “Add” button
+  9) ADD BUTTON
 ────────────────────────────────────────────────────────────────────*/
 .add-btn {
   background: linear-gradient(to right, #9333ea, #4f46e5);
@@ -171,7 +271,7 @@ nav, .navbar {
 }
 
 /*────────────────────────────────────────────────────────────────────
-  9) Cards grid
+ 10) CARDS GRID
 ────────────────────────────────────────────────────────────────────*/
 .cards-grid {
   display: grid;
@@ -182,7 +282,7 @@ nav, .navbar {
 }
 
 /*────────────────────────────────────────────────────────────────────
-  10) Loading / Error / Empty
+ 11) LOADING / ERROR / EMPTY STATES
 ────────────────────────────────────────────────────────────────────*/
 .loading-spinner {
   display: flex;
@@ -190,7 +290,6 @@ nav, .navbar {
   align-items: center;
   height: 12rem;
 }
-
 .error-state,
 .empty-state {
   text-align: center;
@@ -208,7 +307,7 @@ nav, .navbar {
 }
 
 /*────────────────────────────────────────────────────────────────────
-  11) Pagination
+ 12) PAGINATION
 ────────────────────────────────────────────────────────────────────*/
 .pagination {
   display: flex;
@@ -231,10 +330,10 @@ nav, .navbar {
 }
 
 /*────────────────────────────────────────────────────────────────────
-  12) Mobile tweaks (< 400px)
+ 13) MOBILE TWEAK (< 400px)
 ────────────────────────────────────────────────────────────────────*/
 @media (max-width: 400px) {
-  .search-box .search-input {
+  .search-box input {
     padding-right: 4.5rem;
   }
   .clear-btn {
@@ -243,20 +342,4 @@ nav, .navbar {
   .search-btn {
     right: 0.25rem;
   }
-}
-
-
-/* 1) Kill page-wide horizontal scroll */
-body {
-  overflow-x: hidden;
-}
-
-/* 2) Let the search wrapper still show its dropdown */
-.search-add-container {
-  overflow: visible;
-}
-
-/* 3) Ensure flex children can shrink so nothing forces the page wider */
-.search-box {
-  min-width: 0;
 }
