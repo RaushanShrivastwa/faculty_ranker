@@ -30,7 +30,7 @@ export default function Verify() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/auth/verify-otp`, {
+      const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp })
