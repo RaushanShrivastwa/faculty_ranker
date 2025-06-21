@@ -1,5 +1,5 @@
 .faculty-list-container {
-  padding-top: 6rem;
+  padding-top: 7rem;
   background: linear-gradient(to bottom,#1f2937,#111827);
   min-height: 100vh;
   padding: 2rem 1rem;
@@ -16,6 +16,7 @@
   align-items: center;
   gap: 1rem;
   position: relative;
+  padding-top: 0.5rem; /* adds spacing from navbar */
 }
 
 .search-box {
