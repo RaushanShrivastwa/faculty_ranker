@@ -10,41 +10,44 @@ const adminEmails = [
   'manager@yourdomain.com'
 ];
 
-passport.use(new GoogleStrategy({
-    clientID:     process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL:  `${process.env.BACKEND_URL}/api/auth/google/callback`
-  },
-  async (accessToken, refreshToken, profile, done) => {
-    try {
-      // Ensure we got an email
-      if (!profile.emails || !profile.emails.length) {
-        return done(new Error('No email found in Google profile'));
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID:     process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL:  `${process.env.BACKEND_URL}/api/auth/google/callback`
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // Ensure we got an email
+        if (!profile.emails || !profile.emails.length) {
+          return done(new Error('No email found in Google profile'));
+        }
+
+        const email = profile.emails[0].value;
+        const role  = adminEmails.includes(email) ? 'admin' : 'user';
+
+        // Find or create user
+        let user = await User.findOne({ email });
+        if (!user) {
+          user = await User.create({
+            username:    profile.displayName,
+            email,
+            phno:        '',
+            password:    '',          // will set one later if needed
+            provider:    'google',
+            role,
+            verified:    true
+          });
+        }
+
+        return done(null, user);
+      } catch (err) {
+        return done(err);
       }
-
-      const email = profile.emails[0].value;
-      const role  = adminEmails.includes(email) ? 'admin' : 'user';
-
-      // Find or create
-      let user = await User.findOne({ email });
-      if (!user) {
-        user = await User.create({
-          username: profile.displayName,
-          email,
-          phno: '',
-          password: '',           // will generate below if needed
-          provider: 'google',
-          role,
-          verified: true
-        });
-      }
-
-      return done(null, user);
-    } catch (err) {
-      return done(err);
     }
-  }
+  )
 );
 
-// We remove serializeUser / deserializeUser entirely—no sessions!
+// No serializeUser / deserializeUser — we’re stateless
 module.exports = passport;
