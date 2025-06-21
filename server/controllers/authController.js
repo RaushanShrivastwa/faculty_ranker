@@ -117,14 +117,16 @@ exports.signIn = async (req, res) => {
 exports.googleCallback = async (req, res) => {
   const user = req.user;
 
+  // Enforce VIT-AP email
   if (!isVitapEmail(user.email)) {
     return res.redirect(`${process.env.FRONTEND_URL}/403`);
   }
+  // Enforce ban status
   if (user.banned) {
     return res.redirect(`${process.env.FRONTEND_URL}/banned?reason=Your%20account%20is%20banned`);
   }
 
-  // If local password not set, generate one and email it
+  // If no local password yet, generate & email one
   if (!user.password) {
     const randPwd = crypto.randomBytes(5).toString('hex');
     user.password = await bcrypt.hash(randPwd, 10);
@@ -136,15 +138,25 @@ exports.googleCallback = async (req, res) => {
     }
   }
 
+  // Sign JWT
   const token = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: '1h' }
   );
 
-  // Redirect into your front end; front end can grab ?token= and store in localStorage
-  res.redirect(`${process.env.FRONTEND_URL}/auth/success?token=${token}`);
+  // Redirect based on role
+  if (user.role === 'admin') {
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/users?token=${token}`
+    );
+  } else {
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/facultyList?token=${token}`
+    );
+  }
 };
+
 
 exports.logout = (req, res) => {
   // Stateless JWT—nothing to clear server‐side
