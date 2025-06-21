@@ -23,7 +23,7 @@ function Signup() {
 
     setOtpLoading(true);
     try {
-      const res = await fetch(`${API_URL}/request-otp`, {
+      const res = await fetch(`${API_URL}/api/auth/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(signupData)
