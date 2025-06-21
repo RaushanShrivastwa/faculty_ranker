@@ -22,7 +22,7 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  const toggleMenu = () => setIsMenuOpen(o => !o);
+  const toggleMenu = () => setIsMenuOpen(prev => !prev);
 
   return (
     <motion.nav
@@ -52,7 +52,8 @@ const Navbar = () => {
           </Link>
         </motion.div>
 
-        <div className="desktop-nav flex items-center space-x-4">
+        {/* Desktop navigation: hidden on small and shown from md up */}
+        <div className="desktop-nav hidden md:flex items-center space-x-4">
           <Link to="/" className="nav-link">Home</Link>
           <Link to="/about" className="nav-link">About Us</Link>
           <button
@@ -63,6 +64,7 @@ const Navbar = () => {
           </button>
         </div>
 
+        {/* Mobile hamburger: shown on small and hidden from md up */}
         <div className="mobile-menu-btn md:hidden">
           <button onClick={toggleMenu}>
             <span className="sr-only">Toggle menu</span>
@@ -79,6 +81,7 @@ const Navbar = () => {
         </div>
       </div>
 
+      {/* Mobile menu dropdown */}
       {isMenuOpen && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
