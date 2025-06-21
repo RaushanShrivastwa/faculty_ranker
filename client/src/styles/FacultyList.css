@@ -244,3 +244,19 @@ nav, .navbar {
     right: 0.25rem;
   }
 }
+
+
+/* 1) Kill page-wide horizontal scroll */
+body {
+  overflow-x: hidden;
+}
+
+/* 2) Let the search wrapper still show its dropdown */
+.search-add-container {
+  overflow: visible;
+}
+
+/* 3) Ensure flex children can shrink so nothing forces the page wider */
+.search-box {
+  min-width: 0;
+}
