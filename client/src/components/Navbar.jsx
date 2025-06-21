@@ -29,10 +29,10 @@ const Navbar = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`fixed w-full z-50 ${isScrolled ? 'navbar-scrolled' : 'navbar-default'}`}
+      className={`fixed w-full z-50 overflow-x-hidden ${isScrolled ? 'navbar-scrolled' : 'navbar-default'}`}
     >
-      {/* On mobile: logo and hamburger have 1rem gap; desktop reverts to justify-between */}
-      <div className="nav-container flex items-center justify-start md:justify-between space-x-4 md:space-x-0">
+      {/* Mobile: tighter gap and smaller padding; Desktop: standard spacing */}
+      <div className="nav-container flex items-center space-x-2 justify-start px-2 md:justify-between md:space-x-0 md:px-4">
         <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -53,6 +53,7 @@ const Navbar = () => {
           </Link>
         </motion.div>
 
+        {/* Desktop navigation: hidden on small and shown from md up */}
         <div className="desktop-nav hidden md:flex items-center space-x-4">
           <Link to="/" className="nav-link">Home</Link>
           <Link to="/about" className="nav-link">About Us</Link>
@@ -64,6 +65,7 @@ const Navbar = () => {
           </button>
         </div>
 
+        {/* Mobile hamburger: shown on small and hidden from md up */}
         <div className="mobile-menu-btn md:hidden">
           <button onClick={toggleMenu}>
             <span className="sr-only">Toggle menu</span>
@@ -80,6 +82,7 @@ const Navbar = () => {
         </div>
       </div>
 
+      {/* Mobile menu dropdown */}
       {isMenuOpen && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
